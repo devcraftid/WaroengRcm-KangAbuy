@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search,
-  ShoppingCart,
-  Plus,
-  Minus,
-  Trash2,
-  CreditCard,
-  Banknote,
-  QrCode,
-  Printer,
-  X
+  Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Banknote, QrCode, Printer, X, UtensilsCrossed
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import useAuthStore from '../../stores/authStore'
 import { formatCurrency } from '../../utils/format'
 import { toast } from 'sonner'
-import useAuthStore from '../../stores/authStore'
 
 export default function POS() {
   const { profile } = useAuthStore()
@@ -28,400 +19,223 @@ export default function POS() {
   const [orderType, setOrderType] = useState('dine_in')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [showPayment, setShowPayment] = useState(false)
+  const [showCartMobile, setShowCartMobile] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadMenus()
-  }, [selectedCategory])
+  useEffect(() => { loadMenus() }, [selectedCategory])
 
   const loadMenus = async () => {
     try {
-      let query = supabase.from('menus').select('*, categories(*)')
-      
-      if (selectedCategory !== 'all') {
-        query = query.eq('category_id', selectedCategory)
-      }
+      let query = supabase.from('menus').select('*, categories(*)').eq('is_available', true)
+      if (selectedCategory !== 'all') query = query.eq('category_id', selectedCategory)
 
-      const { data: menuData } = await query
-      const { data: categoryData } = await supabase.from('categories').select('*')
-      
-      setMenus(menuData || [])
-      setCategories(categoryData || [])
+      const [menuResult, catResult] = await Promise.all([
+        query.order('name'),
+        supabase.from('categories').select('*').order('name')
+      ])
+      setMenus(menuResult.data || [])
+      setCategories(catResult.data || [])
     } catch (error) {
-      console.error('Error loading menus:', error)
+      console.error('Error:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredMenus = menus.filter(menu =>
-    menu.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
+  const filteredMenus = menus.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
   const addToCart = (menu) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === menu.id)
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.id === menu.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      }
-      return [...prevCart, { ...menu, quantity: 1 }]
-    })
-    toast.success(`${menu.name} ditambahkan`)
-  }
-
-  const updateQuantity = (menuId, delta) => {
-    setCart(prevCart => {
-      return prevCart
-        .map(item => {
-          if (item.id === menuId) {
-            const newQuantity = item.quantity + delta
-            return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
-          }
-          return item
-        })
-        .filter(Boolean)
+    setCart(prev => {
+      const existing = prev.find(i => i.id === menu.id)
+      if (existing) return prev.map(i => i.id === menu.id ? { ...i, quantity: i.quantity + 1 } : i)
+      return [...prev, { ...menu, quantity: 1 }]
     })
   }
-
-  const removeFromCart = (menuId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== menuId))
+  const updateQuantity = (id, delta) => {
+    setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0))
   }
-
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
-  }
+  const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id))
+  const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   const handleCheckout = async () => {
-    if (cart.length === 0) {
-      toast.error('Keranjang masih kosong')
-      return
-    }
-
-    if (orderType === 'dine_in' && !tableNumber) {
-      toast.error('Masukkan nomor meja')
-      return
-    }
+    if (cart.length === 0) { toast.error('Keranjang kosong'); return }
+    if (orderType === 'dine_in' && !tableNumber) { toast.error('Masukkan nomor meja'); return }
 
     try {
-      const total = calculateTotal()
-
-      // Create order
+      // Buat order tanpa created_by
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          table_number: tableNumber,
+          table_number: tableNumber || null,
           order_type: orderType,
           total_amount: total,
           status: 'pending',
           cashier_id: profile?.id,
-          created_by: profile?.id
+          notes: ''
         })
         .select()
         .single()
 
       if (orderError) throw orderError
 
-      // Create order items
-      const orderItems = cart.map(item => ({
+      // Order items
+      const items = cart.map(item => ({
         order_id: order.id,
         menu_id: item.id,
         quantity: item.quantity,
         price: item.price,
         subtotal: item.price * item.quantity
       }))
+      await supabase.from('order_items').insert(items)
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
+      // Payment
+      await supabase.from('payments').insert({
+        order_id: order.id,
+        amount: total,
+        method: paymentMethod,
+        status: paymentMethod === 'cash' ? 'completed' : 'pending'
+      })
 
-      if (itemsError) throw itemsError
-
-      // Create payment
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          order_id: order.id,
-          amount: total,
-          method: paymentMethod,
-          status: paymentMethod === 'cash' ? 'completed' : 'pending'
-        })
-
-      if (paymentError) throw paymentError
-
-      // Log activity
+      // Activity
       await supabase.from('activities').insert({
         user_id: profile?.id,
-        description: `Order #${order.id.slice(0, 8)} dibuat - ${formatCurrency(total)}`,
+        description: `Order #${order.id.slice(0, 8)} - ${formatCurrency(total)}`,
         type: 'order_created'
       })
 
-      toast.success('Order berhasil dibuat!')
+      toast.success('Order berhasil!')
       setCart([])
       setTableNumber('')
       setShowPayment(false)
-
-      // Print invoice if needed
-      if (paymentMethod === 'cash') {
-        printInvoice(order)
-      }
+      setShowCartMobile(false)
     } catch (error) {
-      console.error('Error creating order:', error)
-      toast.error('Gagal membuat order')
+      console.error('Error:', error)
+      toast.error('Gagal membuat order: ' + error.message)
     }
   }
 
-  const printInvoice = (order) => {
-    // Implementation for printing invoice
-    window.print()
-  }
-
   return (
-    <div className="h-full flex">
+    <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row">
       {/* Menu Section */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-6">
-          <div className="flex items-center space-x-4 mb-4">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="bg-white border-b p-3 sm:p-4">
+          <div className="flex items-center space-x-2 mb-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cari menu..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" placeholder="Cari menu..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg border text-sm focus:ring-2 focus:ring-orange-500" />
             </div>
           </div>
-
-          {/* Categories */}
-          <div className="flex space-x-2 overflow-x-auto">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Semua
-            </button>
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category.id
-                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {category.name}
-              </button>
+          {/* Categories - Horizontal Scroll */}
+          <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
+            <button onClick={() => setSelectedCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${selectedCategory === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>Semua</button>
+            {categories.map(cat => (
+              <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${selectedCategory === cat.id ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>{cat.name}</button>
             ))}
           </div>
         </div>
 
         {/* Menu Grid */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
             {filteredMenus.map(menu => (
-              <motion.button
-                key={menu.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => addToCart(menu)}
-                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all text-left"
-              >
-                <div className="w-full h-32 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl mb-3 flex items-center justify-center">
-                  {menu.image_url ? (
-                    <img src={menu.image_url} alt={menu.name} className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <UtensilsCrossed className="w-8 h-8 text-orange-400" />
-                  )}
+              <button key={menu.id} onClick={() => addToCart(menu)}
+                className="bg-white rounded-xl p-2 sm:p-3 shadow-sm border hover:shadow-md transition-all text-left">
+                <div className="h-20 sm:h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center mb-2">
+                  {menu.image_url ? <img src={menu.image_url} alt="" className="w-full h-full object-cover rounded-lg" /> :
+                    <UtensilsCrossed className="w-6 h-6 text-orange-300" />}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm">{menu.name}</h3>
-                <p className="text-orange-600 font-bold mt-1">{formatCurrency(menu.price)}</p>
-              </motion.button>
+                <p className="text-xs font-semibold truncate">{menu.name}</p>
+                <p className="text-xs text-orange-600 font-bold">{formatCurrency(menu.price)}</p>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Cart Section */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center">
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            Order Baru
-          </h2>
+      {/* Cart - Desktop */}
+      <div className="hidden lg:flex w-80 flex-col bg-white border-l">
+        <div className="p-4 border-b">
+          <h3 className="font-bold flex items-center"><ShoppingCart className="w-4 h-4 mr-2" />Order Baru</h3>
+          <div className="flex space-x-1 mt-3">
+            {['dine_in', 'takeaway_waiting', 'takeaway_pickup'].map(t => (
+              <button key={t} onClick={() => setOrderType(t)} className={`flex-1 py-1.5 rounded text-xs ${orderType === t ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>
+                {t === 'dine_in' ? 'Dine In' : t === 'takeaway_waiting' ? 'Waiting' : 'Pickup'}
+              </button>
+            ))}
+          </div>
+          {orderType === 'dine_in' && (
+            <input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="No. Meja" className="w-full mt-2 px-3 py-1.5 rounded-lg border text-sm" />
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {cart.map(item => (
+            <div key={item.id} className="flex items-center justify-between py-2 border-b text-sm">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{item.name}</p>
+                <p className="text-gray-500">{formatCurrency(item.price)}</p>
+              </div>
+              <div className="flex items-center space-x-1">
+                <button onClick={() => updateQuantity(item.id, -1)} className="p-1 rounded bg-gray-100"><Minus className="w-3 h-3" /></button>
+                <span className="w-6 text-center text-xs">{item.quantity}</span>
+                <button onClick={() => updateQuantity(item.id, 1)} className="p-1 rounded bg-orange-100 text-orange-600"><Plus className="w-3 h-3" /></button>
+              </div>
+              <span className="ml-2 font-medium">{formatCurrency(item.price * item.quantity)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t">
+          <div className="flex justify-between mb-3"><span>Total</span><span className="text-xl font-bold text-orange-600">{formatCurrency(total)}</span></div>
+          <button onClick={() => { setPaymentMethod('cash'); handleCheckout() }} className="w-full py-2 bg-green-500 text-white rounded-lg text-sm mb-2">💵 Cash</button>
+          <button onClick={() => { setPaymentMethod('qris'); handleCheckout() }} className="w-full py-2 bg-blue-500 text-white rounded-lg text-sm">📱 QRIS</button>
+        </div>
+      </div>
 
-          {/* Order Type */}
-          <div className="mt-4">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Tipe Order</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['dine_in', 'takeaway_waiting', 'takeaway_pickup'].map(type => (
-                <button
-                  key={type}
-                  onClick={() => setOrderType(type)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                    orderType === type
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {type === 'dine_in' ? 'Dine In' : type === 'takeaway_waiting' ? 'Waiting' : 'Pickup'}
+      {/* Cart - Mobile Button */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl p-3 z-20">
+        <button onClick={() => setShowCartMobile(true)} className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-bold flex items-center justify-center">
+          <ShoppingCart className="w-5 h-5 mr-2" />
+          {cart.length} item · {formatCurrency(total)}
+        </button>
+      </div>
+
+      {/* Cart - Mobile Modal */}
+      <AnimatePresence>
+        {showCartMobile && (
+          <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="lg:hidden fixed inset-0 z-30 bg-white flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-bold">Keranjang ({cart.length})</h3>
+              <button onClick={() => setShowCartMobile(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex space-x-1 p-3">
+              {['dine_in', 'takeaway_waiting', 'takeaway_pickup'].map(t => (
+                <button key={t} onClick={() => setOrderType(t)} className={`flex-1 py-2 rounded-lg text-xs ${orderType === t ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>
+                  {t === 'dine_in' ? 'Dine In' : t === 'takeaway_waiting' ? 'Waiting' : 'Pickup'}
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Table Number */}
-          {orderType === 'dine_in' && (
-            <div className="mt-4">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Nomor Meja</label>
-              <input
-                type="text"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                placeholder="Contoh: A01"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <AnimatePresence>
-            {cart.map(item => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex items-center space-x-3 mb-4 bg-gray-50 rounded-xl p-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                  <p className="text-xs text-gray-500">{formatCurrency(item.price)}</p>
+            {orderType === 'dine_in' && (
+              <div className="px-3 pb-3"><input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="Nomor Meja" className="w-full px-3 py-2 rounded-lg border text-sm" /></div>
+            )}
+            <div className="flex-1 overflow-y-auto px-3">
+              {cart.map(item => (
+                <div key={item.id} className="flex items-center py-2 border-b">
+                  <div className="flex-1"><p className="text-sm font-medium">{item.name}</p><p className="text-xs text-gray-500">{formatCurrency(item.price)}</p></div>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="text-sm font-bold">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 rounded bg-orange-100 text-orange-600 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  </div>
+                  <span className="ml-3 font-bold">{formatCurrency(item.price * item.quantity)}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center hover:bg-gray-300"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="w-7 h-7 rounded-lg bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {cart.length === 0 && (
-            <div className="text-center text-gray-400 mt-20">
-              <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">Keranjang kosong</p>
-              <p className="text-xs mt-1">Klik menu untuk menambahkan</p>
+              ))}
             </div>
-          )}
-        </div>
-
-        {/* Cart Footer */}
-        {cart.length > 0 && (
-          <div className="border-t border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-600">Total</span>
-              <span className="text-2xl font-bold text-gray-900">{formatCurrency(calculateTotal())}</span>
+            <div className="p-3 border-t">
+              <div className="flex justify-between mb-3"><span className="font-bold">Total</span><span className="text-xl font-bold text-orange-600">{formatCurrency(total)}</span></div>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => { setPaymentMethod('cash'); handleCheckout() }} className="py-3 bg-green-500 text-white rounded-xl font-bold text-sm">💵 Cash</button>
+                <button onClick={() => { setPaymentMethod('qris'); handleCheckout() }} className="py-3 bg-blue-500 text-white rounded-xl font-bold text-sm">📱 QRIS</button>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setPaymentMethod('cash')
-                  handleCheckout()
-                }}
-                className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all flex items-center justify-center space-x-2"
-              >
-                <Banknote className="w-5 h-5" />
-                <span>Bayar Cash</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setPaymentMethod('qris')
-                  setShowPayment(true)
-                }}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center space-x-2"
-              >
-                <QrCode className="w-5 h-5" />
-                <span>Bayar QRIS</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Payment Modal */}
-      <AnimatePresence>
-        {showPayment && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white rounded-2xl p-8 max-w-md w-full mx-4"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Pembayaran QRIS</h3>
-                <button onClick={() => setShowPayment(false)}>
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="text-center mb-6">
-                <div className="w-48 h-48 mx-auto bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-                  <QrCode className="w-32 h-32 text-gray-600" />
-                </div>
-                <p className="text-sm text-gray-500">Scan QR code untuk membayar</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(calculateTotal())}</p>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={handleCheckout}
-                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-                >
-                  Konfirmasi Pembayaran
-                </button>
-                <button
-                  onClick={() => setShowPayment(false)}
-                  className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
-                >
-                  Batal
-                </button>
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

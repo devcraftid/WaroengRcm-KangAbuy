@@ -1,21 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  User,
-  Mail,
-  Phone,
-  Camera,
-  Save,
-  Key,
-  Eye,
-  EyeOff,
-  Shield,
-  Calendar,
-  Award,
-  ShoppingBag,
-  DollarSign
+  User, Mail, Phone, Camera, Save, Key, Eye, EyeOff,
+  Shield, Calendar, Award, ShoppingBag, DollarSign,
+  Upload, Trash2
 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { supabase, uploadFile, STORAGE_BUCKETS, STORAGE_FOLDERS } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
 import { formatCurrency, formatDateTime, getMembershipLevelColor } from '../../utils/format'
 import { toast } from 'sonner'
@@ -31,17 +21,13 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  })
+  const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false })
 
   useEffect(() => {
     if (profile) {
@@ -55,49 +41,69 @@ export default function Profile() {
     }
   }, [profile])
 
+  // ============================================
+  // UPLOAD AVATAR
+  // ============================================
   const handleAvatarChange = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files?.[0]
     if (file) {
       setAvatarFile(file)
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result)
-      }
+      reader.onloadend = () => setAvatarPreview(reader.result)
       reader.readAsDataURL(file)
     }
   }
 
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) return
+    
+    setUploading(true)
+    try {
+      const result = await uploadFile(
+        STORAGE_BUCKETS.WEBSITE_ASSETS,
+        STORAGE_FOLDERS.AVATARS,
+        avatarFile
+      )
+
+      if (result.success) {
+        await updateProfile({ avatar_url: result.url })
+        setAvatarPreview(result.url)
+        setAvatarFile(null)
+        toast.success('Foto profil berhasil diupload!')
+      } else {
+        toast.error(result.error || 'Gagal upload foto')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Gagal upload foto: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    await updateProfile({ avatar_url: null })
+    setAvatarPreview(null)
+    setAvatarFile(null)
+    toast.success('Foto profil dihapus')
+  }
+
+  // ============================================
+  // UPDATE PROFILE
+  // ============================================
   const handleUpdateProfile = async (e) => {
     e.preventDefault()
     setSaving(true)
 
     try {
-      let avatarUrl = profile.avatar_url
-
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop()
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`
-        const filePath = `avatars/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('website-assets')
-          .upload(filePath, avatarFile, { upsert: true })
-
-        if (uploadError) throw uploadError
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('website-assets')
-          .getPublicUrl(filePath)
-
-        avatarUrl = publicUrl
+      const updates = {
+        full_name: form.full_name,
+        phone: form.phone || null,
+        birth_date: form.birth_date || null
       }
 
-      await updateProfile({
-        ...form,
-        avatar_url: avatarUrl
-      })
-
-      toast.success('Profile berhasil diupdate')
+      await updateProfile(updates)
+      toast.success('Profile berhasil diupdate!')
     } catch (error) {
       console.error('Error updating profile:', error)
       toast.error('Gagal mengupdate profile')
@@ -106,11 +112,19 @@ export default function Profile() {
     }
   }
 
+  // ============================================
+  // CHANGE PASSWORD
+  // ============================================
   const handleChangePassword = async (e) => {
     e.preventDefault()
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error('Password baru tidak cocok')
+      return
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast.error('Password minimal 6 karakter')
       return
     }
 
@@ -121,13 +135,9 @@ export default function Profile() {
 
       if (error) throw error
 
-      toast.success('Password berhasil diubah')
+      toast.success('Password berhasil diubah!')
       setShowPasswordForm(false)
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
+      setPasswordForm({ newPassword: '', confirmPassword: '' })
     } catch (error) {
       console.error('Error changing password:', error)
       toast.error(error.message || 'Gagal mengubah password')
@@ -135,34 +145,56 @@ export default function Profile() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Profile</h1>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">Profile</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left Column - Avatar & Info */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
+            {/* Avatar */}
             <div className="relative inline-block">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-4xl font-bold mx-auto overflow-hidden">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold mx-auto overflow-hidden">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   profile?.full_name?.[0]?.toUpperCase() || 'U'
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition-colors">
-                <Camera className="w-5 h-5 text-white" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
+              
+              <label className="absolute bottom-0 right-0 w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition-colors shadow-lg">
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </label>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-4">{profile?.full_name}</h2>
+            {/* Upload/Remove buttons */}
+            {avatarFile && (
+              <button
+                onClick={handleUploadAvatar}
+                disabled={uploading}
+                className="mt-3 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 disabled:opacity-50 w-full"
+              >
+                {uploading ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline mr-1"></div>Mengupload...</>
+                ) : (
+                  <><Upload className="w-4 h-4 inline mr-1" />Simpan Foto</>
+                )}
+              </button>
+            )}
             
+            {avatarPreview && !avatarFile && (
+              <button
+                onClick={handleRemoveAvatar}
+                className="mt-3 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 w-full"
+              >
+                <Trash2 className="w-4 h-4 inline mr-1" />Hapus Foto
+              </button>
+            )}
+
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mt-4">{profile?.full_name || 'User'}</h2>
+
+            {/* Membership Badge */}
             {profile?.role === 'customer' && profile?.membership_level && (
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${getMembershipLevelColor(profile.membership_level)}`}>
                 <Award className="w-4 h-4 mr-1" />
@@ -171,6 +203,19 @@ export default function Profile() {
                 {profile.membership_level === 'vip' && 'VIP Customer'}
               </div>
             )}
+
+            {/* Role Badge */}
+            <div className="mt-2">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                profile?.role === 'admin' ? 'bg-yellow-100 text-yellow-700' :
+                profile?.role === 'cashier' ? 'bg-green-100 text-green-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                <Shield className="w-3 h-3 mr-1" />
+                {profile?.role === 'admin' ? 'Admin (Owner)' :
+                 profile?.role === 'cashier' ? 'Kasir' : 'Customer'}
+              </span>
+            </div>
 
             <div className="mt-4 space-y-2 text-sm text-gray-500">
               <p className="flex items-center justify-center">
@@ -185,7 +230,7 @@ export default function Profile() {
               )}
               <p className="flex items-center justify-center">
                 <Calendar className="w-4 h-4 mr-2" />
-                Bergabung: {formatDateTime(profile?.created_at)}
+                Bergabung: {profile?.created_at ? formatDateTime(profile.created_at) : '-'}
               </p>
             </div>
 
@@ -207,11 +252,11 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Right Column - Edit Form */}
+        {/* Right Column - Forms */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Profile Form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Edit Profile</h3>
+          {/* Edit Profile */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Edit Profile</h3>
             
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div>
@@ -222,7 +267,7 @@ export default function Profile() {
                   type="text"
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 text-sm"
                 />
               </div>
 
@@ -234,9 +279,9 @@ export default function Profile() {
                   type="email"
                   value={form.email}
                   disabled
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Email tidak dapat diubah</p>
+                <p className="text-xs text-gray-400 mt-1">Email tidak dapat diubah</p>
               </div>
 
               <div>
@@ -247,7 +292,7 @@ export default function Profile() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 text-sm"
                 />
               </div>
 
@@ -259,14 +304,14 @@ export default function Profile() {
                   type="date"
                   value={form.birth_date}
                   onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 text-sm"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 text-sm"
               >
                 <Save className="w-5 h-5" />
                 <span>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
@@ -275,15 +320,15 @@ export default function Profile() {
           </div>
 
           {/* Change Password */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Ubah Password</h3>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Ubah Password</h3>
               <button
                 onClick={() => setShowPasswordForm(!showPasswordForm)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
+                className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200"
               >
                 <Key className="w-4 h-4" />
-                <span>{showPasswordForm ? 'Batal' : 'Ubah Password'}</span>
+                <span>{showPasswordForm ? 'Batal' : 'Ubah'}</span>
               </button>
             </div>
 
@@ -298,14 +343,11 @@ export default function Profile() {
                       onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                       required
                       minLength={6}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 pr-12"
+                      placeholder="Minimal 6 karakter"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 pr-12 text-sm"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      {showPasswords.new ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                    <button type="button" onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -319,44 +361,38 @@ export default function Profile() {
                       onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                       required
                       minLength={6}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 pr-12"
+                      placeholder="Ulangi password baru"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 pr-12 text-sm"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      {showPasswords.confirm ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                    <button type="button" onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors"
-                >
+                <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors text-sm">
                   Ubah Password
                 </button>
               </form>
             )}
           </div>
 
-          {/* Role Info */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Akun</h3>
+          {/* Account Info */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Informasi Akun</h3>
             <div className="space-y-3">
               <div className="flex items-center">
-                <Shield className="w-5 h-5 text-gray-400 mr-3" />
+                <Shield className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">Role</p>
                   <p className="text-sm text-gray-500 capitalize">{profile?.role || 'customer'}</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <User className="w-5 h-5 text-gray-400 mr-3" />
+                <User className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">User ID</p>
-                  <p className="text-sm text-gray-500 font-mono">{user?.id?.slice(0, 16)}...</p>
+                  <p className="text-sm text-gray-500 font-mono text-xs break-all">{user?.id}</p>
                 </div>
               </div>
             </div>

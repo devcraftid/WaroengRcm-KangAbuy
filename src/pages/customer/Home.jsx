@@ -14,15 +14,18 @@ import {
   Sparkles,
   Package,
   Zap,
-  Quote
+  Quote,
+  Percent,
+  Calendar
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, formatDate } from '../../utils/format'
 
 export default function Home() {
   const [settings, setSettings] = useState(null)
   const [bestSellers, setBestSellers] = useState([])
   const [categories, setCategories] = useState([])
+  const [promotions, setPromotions] = useState([])
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -36,11 +39,13 @@ export default function Home() {
         { data: settingsData },
         { data: bestSellersData },
         { data: categoriesData },
+        { data: promotionsData },
         { data: testimonialsData }
       ] = await Promise.all([
         supabase.from('website_settings').select('*').single(),
         supabase.from('menus').select('*').eq('is_available', true).order('total_sold', { ascending: false }).limit(8),
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('promotions').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(4),
         supabase.from('website_testimonials').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(10)
       ])
 
@@ -53,6 +58,7 @@ export default function Home() {
       })
       setBestSellers(bestSellersData || [])
       setCategories(categoriesData || [])
+      setPromotions(promotionsData || [])
       setTestimonials(testimonialsData || [])
     } catch (error) {
       console.error('Error loading home data:', error)
@@ -60,6 +66,15 @@ export default function Home() {
       setLoading(false)
     }
   }
+
+  // Filter promo yang masih aktif
+  const activePromotions = promotions.filter(promo => {
+    if (!promo.is_active) return false
+    const now = new Date()
+    if (promo.start_date && new Date(promo.start_date) > now) return false
+    if (promo.end_date && new Date(promo.end_date) < now) return false
+    return true
+  })
 
   if (loading) {
     return (
@@ -75,7 +90,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* ============================================ */}
-      {/* HERO BANNER - MOBILE OPTIMIZED */}
+      {/* HERO BANNER */}
       {/* ============================================ */}
       <section className="relative bg-gradient-to-br from-orange-500 via-red-500 to-red-700 text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
@@ -148,7 +163,99 @@ export default function Home() {
       </section>
 
       {/* ============================================ */}
-      {/* BEST SELLER - MOBILE GRID 2 KOLOM */}
+      {/* PROMO SPESIAL */}
+      {/* ============================================ */}
+      {activePromotions.length > 0 && (
+        <section className="py-12 sm:py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+                <Percent className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-red-500" />
+                Promo Spesial
+              </h2>
+              <p className="text-sm sm:text-base text-gray-500">
+                Jangan lewatkan penawaran menarik dari kami!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {activePromotions.map((promo, index) => (
+                <motion.div
+                  key={promo.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl overflow-hidden border border-orange-200 hover:shadow-xl transition-all duration-300 group"
+                >
+                  {/* Promo Image */}
+                  {promo.image_url ? (
+                    <div className="relative h-40 overflow-hidden">
+                      <img
+                        src={promo.image_url}
+                        alt={promo.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                        PROMO
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative h-40 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                      <Percent className="w-16 h-16 text-white/50" />
+                      <div className="absolute top-3 right-3 bg-white/90 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
+                        PROMO
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Promo Content */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 line-clamp-1">
+                      {promo.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2.5rem]">
+                      {promo.description || 'Promo spesial untuk Anda!'}
+                    </p>
+
+                    {/* Discount Badge */}
+                    <div className="mb-3">
+                      <span className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-600 rounded-full text-sm font-bold">
+                        {promo.discount_type === 'percentage'
+                          ? `Diskon ${promo.discount_value}%`
+                          : formatCurrency(promo.discount_value)
+                        }
+                      </span>
+                    </div>
+
+                    {/* Date Range */}
+                    {(promo.start_date || promo.end_date) && (
+                      <div className="flex items-center text-xs text-gray-400 mb-3">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        <span>
+                          {promo.start_date ? formatDate(promo.start_date) : 'Sekarang'}
+                          {' - '}
+                          {promo.end_date ? formatDate(promo.end_date) : 'Seterusnya'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* CTA Button */}
+                    <Link
+                      to="/menu"
+                      className="block w-full text-center py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-orange-500/25 transition-all"
+                    >
+                      Pesan Sekarang
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ============================================ */}
+      {/* BEST SELLER */}
       {/* ============================================ */}
       <section className="py-12 sm:py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -195,10 +302,7 @@ export default function Home() {
                     <p className="text-[10px] sm:text-xs text-gray-500 mt-1 line-clamp-2 min-h-[2rem]">{menu.description || '-'}</p>
                     <div className="flex items-center justify-between mt-2 sm:mt-3">
                       <span className="text-sm sm:text-lg font-bold text-orange-600">{formatCurrency(menu.price)}</span>
-                      <Link
-                        to={`/menu?item=${menu.id}`}
-                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all"
-                      >
+                      <Link to={`/menu?item=${menu.id}`} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all">
                         <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
                       </Link>
                     </div>
@@ -217,7 +321,7 @@ export default function Home() {
       </section>
 
       {/* ============================================ */}
-      {/* CATEGORIES - MOBILE GRID 2 KOLOM */}
+      {/* CATEGORIES */}
       {/* ============================================ */}
       {categories.length > 0 && (
         <section className="py-12 sm:py-16 bg-white">
@@ -300,7 +404,7 @@ export default function Home() {
       </section>
 
       {/* ============================================ */}
-      {/* TESTIMONIALS - HANYA TAMPIL JIKA ADA DATA */}
+      {/* TESTIMONIALS */}
       {/* ============================================ */}
       {testimonials.length > 0 && (
         <section className="py-12 sm:py-16 bg-white">
@@ -380,6 +484,14 @@ export default function Home() {
                   <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-800 rounded-lg sm:rounded-xl flex items-center justify-center hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 transition-all">
                     <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
                   </a>
+                )}
+              </div>
+              <div className="mt-4 space-y-1 text-xs sm:text-sm text-gray-400">
+                {settings?.gofood_url && (
+                  <a href={settings.gofood_url} target="_blank" rel="noopener noreferrer" className="block hover:text-orange-400">🛵 GoFood</a>
+                )}
+                {settings?.grabfood_url && (
+                  <a href={settings.grabfood_url} target="_blank" rel="noopener noreferrer" className="block hover:text-green-400">🛵 GrabFood</a>
                 )}
               </div>
             </div>

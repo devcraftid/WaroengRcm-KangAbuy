@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react' // ← TAMBAHKAN useEffect
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -19,6 +19,7 @@ import {
   Store,
   Clock
 } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
 
 const menuItems = [
@@ -43,7 +44,7 @@ export default function CashierLayout() {
 
   const handleSignOut = async () => {
     await signOut()
-    navigate('/')
+    navigate('/login')
   }
 
   return (
@@ -78,10 +79,7 @@ export default function CashierLayout() {
               <span className="text-xs text-gray-500 block">Kasir Panel</span>
             </div>
           </Link>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -122,6 +120,7 @@ export default function CashierLayout() {
             <button
               onClick={handleSignOut}
               className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+              title="Sign Out"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -132,7 +131,7 @@ export default function CashierLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -140,18 +139,15 @@ export default function CashierLayout() {
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             {/* Clock */}
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
               <Clock className="w-4 h-4" />
               <CurrentTime />
             </div>
 
             {/* Notifications */}
-            <Link
-              to="/cashier/notifications"
-              className="relative p-2 rounded-lg hover:bg-gray-100"
-            >
+            <Link to="/cashier/notifications" className="relative p-2 rounded-lg hover:bg-gray-100">
               <Bell className="w-5 h-5 text-gray-600" />
               <NotificationBadge />
             </Link>
@@ -159,7 +155,7 @@ export default function CashierLayout() {
             {/* Quick Close Register */}
             <Link
               to="/cashier/closing"
-              className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+              className="hidden sm:flex items-center px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
             >
               Closing
             </Link>
@@ -175,7 +171,9 @@ export default function CashierLayout() {
   )
 }
 
-// Current Time Component
+// ============================================
+// CurrentTime Component
+// ============================================
 function CurrentTime() {
   const [time, setTime] = useState(new Date())
 
@@ -184,31 +182,53 @@ function CurrentTime() {
     return () => clearInterval(timer)
   }, [])
 
-  return <span>{time.toLocaleTimeString('id-ID')}</span>
+  return <span>{time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
 }
 
-// Notification Badge Component
+// ============================================
+// NotificationBadge Component
+// ============================================
 function NotificationBadge() {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    const loadNotifications = async () => {
+    loadUnreadCount()
+    
+    // Subscribe to new notifications
+    const channel = supabase
+      .channel('cashier-notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications'
+      }, () => {
+        loadUnreadCount()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  const loadUnreadCount = async () => {
+    try {
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
       
       setCount(count || 0)
+    } catch (error) {
+      // Silently ignore
     }
-    
-    loadNotifications()
-  }, [])
+  }
 
   if (count === 0) return null
 
   return (
-    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-      {count}
+    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+      {count > 99 ? '99+' : count}
     </span>
   )
 }

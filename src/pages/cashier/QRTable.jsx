@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { QrCode, Download, Printer, Search, Copy, Check } from 'lucide-react'
+import {
+  QrCode, Download, Printer, Copy, Check,
+  Search, RefreshCw, X
+} from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import QRCode from 'qrcode'
@@ -8,8 +11,10 @@ import QRCode from 'qrcode'
 export default function CashierQRTable() {
   const [tables, setTables] = useState([])
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(null)
+  const [selectedTables, setSelectedTables] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [qrCodes, setQrCodes] = useState({}) // Simpan QR data URL di memory
+  const [generating, setGenerating] = useState({}) // Track generating status
   const [copiedTable, setCopiedTable] = useState(null)
 
   useEffect(() => {
@@ -17,211 +22,406 @@ export default function CashierQRTable() {
   }, [])
 
   const loadTables = async () => {
-    const { data } = await supabase
-      .from('tables')
-      .select('*')
-      .order('table_number')
-    
-    setTables(data || [])
-    setLoading(false)
+    try {
+      const { data } = await supabase
+        .from('tables')
+        .select('*')
+        .order('table_number')
+
+      const tablesData = data || []
+      setTables(tablesData)
+
+      // Auto-generate QR untuk meja yang belum punya
+      tablesData.forEach(table => {
+        if (!qrCodes[table.id]) {
+          generateQRDataURL(table)
+        }
+      })
+    } catch (error) {
+      console.error('Error loading tables:', error)
+      toast.error('Gagal memuat data meja')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const generateQR = async (table) => {
-    setGenerating(table.id)
+  // Generate QR code sebagai Data URL (disimpan di memory browser)
+  const generateQRDataURL = async (table) => {
+    if (qrCodes[table.id]) return // Sudah ada, skip
+    
+    setGenerating(prev => ({ ...prev, [table.id]: true }))
+    
     try {
       const qrData = `${window.location.origin}/order?table=${table.table_number}`
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      const dataUrl = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 2,
-        color: { dark: '#000000', light: '#ffffff' }
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
       })
-
-      const response = await fetch(qrCodeDataUrl)
-      const blob = await response.blob()
       
-      const filePath = `qr-codes/table-${table.table_number}.png`
-      await supabase.storage.from('qr-codes').upload(filePath, blob, {
-        contentType: 'image/png',
-        upsert: true
-      })
-
-      const { data: { publicUrl } } = supabase.storage.from('qr-codes').getPublicUrl(filePath)
-      
-      await supabase.from('tables').update({ qr_code_url: publicUrl }).eq('id', table.id)
-      
-      toast.success(`QR Meja ${table.table_number} dibuat`)
-      loadTables()
+      setQrCodes(prev => ({ ...prev, [table.id]: dataUrl }))
     } catch (error) {
       console.error('Error generating QR:', error)
-      toast.error('Gagal membuat QR')
+      toast.error(`Gagal membuat QR untuk meja ${table.table_number}`)
     } finally {
-      setGenerating(null)
+      setGenerating(prev => ({ ...prev, [table.id]: false }))
     }
   }
 
+  // Generate semua QR
   const generateAllQR = async () => {
-    for (const table of tables) {
-      if (!table.qr_code_url) {
-        await generateQR(table)
+    toast.promise(
+      Promise.all(tables.map(table => generateQRDataURL(table))),
+      {
+        loading: 'Membuat QR Code...',
+        success: 'Semua QR Code berhasil dibuat!',
+        error: 'Gagal membuat beberapa QR Code'
       }
-    }
+    )
   }
 
+  // Download QR sebagai file PNG
   const downloadQR = async (table) => {
-    if (!table.qr_code_url) {
-      toast.error('QR belum dibuat')
+    const qrDataUrl = qrCodes[table.id]
+    if (!qrDataUrl) {
+      toast.error('QR Code belum dibuat. Klik Generate dulu.')
       return
     }
-    const response = await fetch(table.qr_code_url)
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `QR-Meja-${table.table_number}.png`
-    a.click()
-    window.URL.revokeObjectURL(url)
+
+    const link = document.createElement('a')
+    link.download = `QR-Meja-${table.table_number}.png`
+    link.href = qrDataUrl
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success(`QR Meja ${table.table_number} didownload!`)
   }
 
+  // Print QR individual
   const printQR = (table) => {
-    if (!table.qr_code_url) {
-      toast.error('QR belum dibuat')
+    const qrDataUrl = qrCodes[table.id]
+    if (!qrDataUrl) {
+      toast.error('QR Code belum dibuat')
       return
     }
-    const printWindow = window.open('', '_blank')
+
+    const printWindow = window.open('', '_blank', 'width=400,height=500')
     printWindow.document.write(`
       <html>
         <head>
           <title>QR Meja ${table.table_number}</title>
           <style>
-            body { text-align: center; padding: 20px; font-family: Arial; }
-            img { width: 250px; height: 250px; }
-            @media print { body { margin: 0; } }
+            * { margin: 0; padding: 0; }
+            body { 
+              display: flex; 
+              flex-direction: column; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh; 
+              font-family: Arial, sans-serif;
+              padding: 20px;
+            }
+            .container { text-align: center; }
+            img { width: 250px; height: 250px; image-rendering: crisp-edges; }
+            h2 { margin: 10px 0 5px; font-size: 18px; color: #333; }
+            h3 { margin: 5px 0; font-size: 16px; color: #f97316; }
+            p { color: #666; font-size: 12px; margin: 3px 0; }
+            .link { font-size: 10px; color: #999; word-break: break-all; }
+            @media print {
+              body { margin: 0; padding: 10px; }
+              .container { page-break-after: avoid; }
+            }
           </style>
         </head>
         <body>
-          <h2>WAROENG RCM</h2>
-          <img src="${table.qr_code_url}" alt="QR" />
-          <h3>Meja: ${table.table_number}</h3>
-          <p>Scan untuk order</p>
+          <div class="container">
+            <h2>🍜 WAROENG RCM KANG ABUY</h2>
+            <p>Scan QR untuk order</p>
+            <img src="${qrDataUrl}" alt="QR Meja ${table.table_number}" />
+            <h3>Meja: ${table.table_number}</h3>
+            <p>Kapasitas: ${table.capacity} orang</p>
+            <p class="link">${window.location.origin}/order?table=${table.table_number}</p>
+          </div>
         </body>
       </html>
     `)
     printWindow.document.close()
-    printWindow.print()
+    setTimeout(() => printWindow.print(), 500)
   }
 
+  // Bulk print QR
+  const bulkPrintQR = () => {
+    if (selectedTables.length === 0) {
+      toast.error('Pilih meja terlebih dahulu')
+      return
+    }
+
+    const selectedData = tables.filter(t => selectedTables.includes(t.id) && qrCodes[t.id])
+    
+    if (selectedData.length === 0) {
+      toast.error('QR Code belum dibuat untuk meja yang dipilih')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700')
+    
+    const cardsHTML = selectedData.map(table => `
+      <div class="card">
+        <h3>WAROENG RCM</h3>
+        <img src="${qrCodes[table.id]}" alt="QR" />
+        <p class="table-num">Meja: ${table.table_number}</p>
+        <p class="capacity">Kapasitas: ${table.capacity} orang</p>
+      </div>
+    `).join('')
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR Meja - Bulk Print</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 15px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .grid { 
+              display: grid; 
+              grid-template-columns: repeat(2, 1fr); 
+              gap: 15px; 
+            }
+            .card { 
+              text-align: center; 
+              padding: 10px; 
+              border: 2px dashed #ddd; 
+              border-radius: 10px; 
+            }
+            img { width: 130px; height: 130px; }
+            .table-num { font-size: 14px; font-weight: bold; margin: 5px 0; color: #f97316; }
+            .capacity { font-size: 11px; color: #666; }
+            @media print {
+              body { padding: 5px; }
+              .grid { gap: 5px; }
+              .card { page-break-inside: avoid; border-color: #ccc; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>🍜 WAROENG RCM KANG ABUY</h2>
+            <p>QR Code Meja - ${new Date().toLocaleDateString('id-ID')}</p>
+          </div>
+          <div class="grid">${cardsHTML}</div>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    setTimeout(() => printWindow.print(), 500)
+  }
+
+  // Copy link order
   const copyLink = async (table) => {
     const link = `${window.location.origin}/order?table=${table.table_number}`
     try {
       await navigator.clipboard.writeText(link)
       setCopiedTable(table.id)
-      toast.success('Link disalin')
+      toast.success('Link order disalin!')
       setTimeout(() => setCopiedTable(null), 2000)
     } catch {
-      toast.error('Gagal menyalin link')
+      // Fallback
+      const textarea = document.createElement('textarea')
+      textarea.value = link
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopiedTable(table.id)
+      toast.success('Link order disalin!')
+      setTimeout(() => setCopiedTable(null), 2000)
     }
   }
 
-  const filteredTables = tables.filter(t => 
+  // Select handlers
+  const handleSelectAll = () => {
+    if (selectedTables.length === tables.length) {
+      setSelectedTables([])
+    } else {
+      setSelectedTables(tables.map(t => t.id))
+    }
+  }
+
+  const handleSelectTable = (tableId) => {
+    setSelectedTables(prev =>
+      prev.includes(tableId) ? prev.filter(id => id !== tableId) : [...prev, tableId]
+    )
+  }
+
+  const filteredTables = tables.filter(t =>
     t.table_number.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">QR Meja</h1>
-          <p className="text-sm text-gray-500 mt-1">Generate & manage QR codes</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">QR Meja</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Generate & cetak QR Code untuk setiap meja
+          </p>
         </div>
-        <button
-          onClick={generateAllQR}
-          disabled={generating}
-          className="px-4 py-2.5 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 disabled:opacity-50"
-        >
-          Generate Semua
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={generateAllQR}
+            className="px-3 py-2 bg-green-500 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-green-600 flex items-center"
+          >
+            <RefreshCw className="w-4 h-4 mr-1" />
+            Generate Semua
+          </button>
+          <button
+            onClick={bulkPrintQR}
+            disabled={selectedTables.length === 0}
+            className="px-3 py-2 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 flex items-center"
+          >
+            <Printer className="w-4 h-4 mr-1" />
+            Print ({selectedTables.length})
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      {/* Search & Select All */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Cari nomor meja..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-orange-500"
           />
         </div>
+        <label className="flex items-center space-x-2 cursor-pointer text-sm whitespace-nowrap">
+          <input
+            type="checkbox"
+            checked={selectedTables.length === tables.length && tables.length > 0}
+            onChange={handleSelectAll}
+            className="w-4 h-4 text-orange-500 rounded"
+          />
+          <span>Pilih Semua ({tables.length})</span>
+        </label>
       </div>
 
       {/* QR Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-white rounded-2xl shimmer"></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="h-48 sm:h-56 bg-white rounded-2xl animate-pulse"></div>
           ))}
         </div>
+      ) : filteredTables.length === 0 ? (
+        <div className="text-center py-12">
+          <QrCode className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500">Tidak ada meja ditemukan</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {filteredTables.map(table => (
             <motion.div
               key={table.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center"
+              className={`bg-white rounded-xl sm:rounded-2xl shadow-sm border-2 p-3 sm:p-4 transition-all ${
+                selectedTables.includes(table.id)
+                  ? 'border-orange-500 bg-orange-50'
+                  : 'border-gray-100 hover:border-gray-200'
+              }`}
             >
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Meja {table.table_number}
-              </h3>
+              {/* Checkbox */}
+              <div className="flex items-center justify-between mb-2">
+                <input
+                  type="checkbox"
+                  checked={selectedTables.includes(table.id)}
+                  onChange={() => handleSelectTable(table.id)}
+                  className="w-4 h-4 text-orange-500 rounded"
+                />
+                <span className="text-xs text-gray-500">
+                  Kap: {table.capacity}
+                </span>
+              </div>
 
-              {table.qr_code_url ? (
-                <>
+              {/* QR Code Display */}
+              <div className="text-center mb-3">
+                {qrCodes[table.id] ? (
                   <img
-                    src={table.qr_code_url}
+                    src={qrCodes[table.id]}
                     alt={`QR Meja ${table.table_number}`}
-                    className="w-48 h-48 mx-auto rounded-lg mb-4"
+                    className="w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-lg border"
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                ) : generating[table.id] ? (
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
+                      <span className="text-xs text-gray-500">Generating...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => generateQRDataURL(table)}
+                    className="w-32 h-32 sm:w-36 sm:h-36 mx-auto bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer"
+                  >
+                    <div className="text-center">
+                      <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                      <span className="text-xs text-gray-500">Klik Generate</span>
+                    </div>
+                  </button>
+                )}
+                
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mt-2">
+                  Meja {table.table_number}
+                </h3>
+              </div>
+
+              {/* Action Buttons */}
+              {qrCodes[table.id] && (
+                <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-1">
                     <button
                       onClick={() => downloadQR(table)}
-                      className="py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100"
+                      className="py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 flex items-center justify-center"
                     >
-                      <Download className="w-4 h-4 inline mr-1" />
+                      <Download className="w-3 h-3 mr-1" />
                       Download
                     </button>
                     <button
                       onClick={() => printQR(table)}
-                      className="py-2 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100"
+                      className="py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 flex items-center justify-center"
                     >
-                      <Printer className="w-4 h-4 inline mr-1" />
+                      <Printer className="w-3 h-3 mr-1" />
                       Print
                     </button>
                   </div>
                   <button
                     onClick={() => copyLink(table)}
-                    className="w-full mt-2 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100"
+                    className={`w-full py-1.5 rounded-lg text-xs font-medium flex items-center justify-center transition-colors ${
+                      copiedTable === table.id
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
                   >
                     {copiedTable === table.id ? (
-                      <><Check className="w-4 h-4 inline mr-1" /> Tersalin</>
+                      <>
+                        <Check className="w-3 h-3 mr-1" />
+                        Tersalin!
+                      </>
                     ) : (
-                      <><Copy className="w-4 h-4 inline mr-1" /> Salin Link</>
+                      <>
+                        <Copy className="w-3 h-3 mr-1" />
+                        Salin Link
+                      </>
                     )}
-                  </button>
-                </>
-              ) : (
-                <div className="mb-4">
-                  <div className="w-48 h-48 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
-                    <QrCode className="w-16 h-16 text-gray-300" />
-                  </div>
-                  <button
-                    onClick={() => generateQR(table)}
-                    disabled={generating === table.id}
-                    className="mt-4 w-full py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    {generating === table.id ? 'Generating...' : 'Generate QR'}
                   </button>
                 </div>
               )}
@@ -229,6 +429,17 @@ export default function CashierQRTable() {
           ))}
         </div>
       )}
+
+      {/* Info */}
+      <div className="mt-6 bg-blue-50 rounded-xl p-4 text-sm text-blue-700">
+        <p>💡 <strong>Tips:</strong></p>
+        <ul className="list-disc list-inside mt-1 text-xs space-y-1">
+          <li>QR Code digenerate langsung di browser (tidak perlu upload)</li>
+          <li>Klik <strong>Generate Semua</strong> untuk membuat QR semua meja sekaligus</li>
+          <li>Centang meja lalu klik <strong>Print</strong> untuk cetak massal</li>
+          <li>Gunakan <strong>Salin Link</strong> untuk share link order meja via WhatsApp</li>
+        </ul>
+      </div>
     </div>
   )
 }

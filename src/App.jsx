@@ -41,7 +41,7 @@ import POS from './pages/cashier/POS'
 import CashierOrders from './pages/cashier/Orders'
 import CashierTableMonitoring from './pages/cashier/TableMonitoring'
 import CashierQRTable from './pages/cashier/QRTable'
-import Payment from './pages/cashier/Payment'
+import CashierPayment from './pages/cashier/Payment'
 import TakeawayQueue from './pages/cashier/TakeawayQueue'
 import TransactionHistory from './pages/cashier/TransactionHistory'
 import CashierClosing from './pages/cashier/CashierClosing'
@@ -82,29 +82,26 @@ function App() {
     checkSession()
   }, [])
 
-  // Listen for auth changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
           await loadProfile(session.user.id)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setProfile(null)
+        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (!session) {
+            setUser(null)
+            setProfile(null)
+          }
         }
       }
     )
-
-    return () => {
-      subscription?.unsubscribe()
-    }
+    return () => subscription?.unsubscribe()
   }, [])
 
   const checkSession = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
       if (session?.user) {
         setUser(session.user)
         await loadProfile(session.user.id)
@@ -118,35 +115,23 @@ function App() {
 
   const loadProfile = async (userId) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
-      
-      if (error) {
-        console.error('Error loading profile:', error)
-        return
-      }
-      
-      if (data) {
-        setProfile(data)
-      }
+        .maybeSingle()
+      if (data) setProfile(data)
     } catch (error) {
       console.error('Profile load error:', error)
     }
   }
 
-  if (loading) {
-    return <LoadingScreen />
-  }
+  if (loading) return <LoadingScreen />
 
   return (
     <ErrorBoundary>
       <Routes>
-        {/* ============================================ */}
-        {/* PUBLIC ROUTES (Guest Layout) */}
-        {/* ============================================ */}
+        {/* PUBLIC ROUTES */}
         <Route element={<GuestLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
@@ -156,9 +141,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
         </Route>
 
-        {/* ============================================ */}
-        {/* CUSTOMER PROTECTED ROUTES */}
-        {/* ============================================ */}
+        {/* CUSTOMER ROUTES */}
         <Route element={<CustomerLayout />}>
           <Route path="/customer/history" element={<OrderHistory />} />
           <Route path="/customer/favorites" element={<Favorites />} />
@@ -167,22 +150,14 @@ function App() {
           <Route path="/customer/profile" element={<Profile />} />
         </Route>
 
-        {/* ============================================ */}
-        {/* CASHIER PROTECTED ROUTES */}
-        {/* ============================================ */}
-        <Route 
-          element={
-            <ProtectedRoute allowedRoles={['cashier', 'admin']}>
-              <CashierLayout />
-            </ProtectedRoute>
-          }
-        >
+        {/* CASHIER ROUTES */}
+        <Route element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><CashierLayout /></ProtectedRoute>}>
           <Route path="/cashier" element={<CashierDashboard />} />
           <Route path="/cashier/pos" element={<POS />} />
           <Route path="/cashier/orders" element={<CashierOrders />} />
           <Route path="/cashier/tables" element={<CashierTableMonitoring />} />
           <Route path="/cashier/qr" element={<CashierQRTable />} />
-          <Route path="/cashier/payment/:id" element={<Payment />} />
+          <Route path="/cashier/payment/:id" element={<CashierPayment />} />
           <Route path="/cashier/takeaway" element={<TakeawayQueue />} />
           <Route path="/cashier/history" element={<TransactionHistory />} />
           <Route path="/cashier/closing" element={<CashierClosing />} />
@@ -191,16 +166,8 @@ function App() {
           <Route path="/cashier/profile" element={<Profile />} />
         </Route>
 
-        {/* ============================================ */}
-        {/* ADMIN PROTECTED ROUTES */}
-        {/* ============================================ */}
-        <Route 
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
+        {/* ADMIN ROUTES */}
+        <Route element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout /></ProtectedRoute>}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/menu" element={<ManageMenu />} />
           <Route path="/admin/categories" element={<ManageCategories />} />
@@ -220,38 +187,21 @@ function App() {
           <Route path="/admin/profile" element={<Profile />} />
         </Route>
 
-        {/* ============================================ */}
         {/* AUTH ROUTES */}
-        {/* ============================================ */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        
-        {/* ============================================ */}
-        {/* 404 PAGE */}
-        {/* ============================================ */}
+
+        {/* 404 */}
         <Route path="*" element={
           <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <div className="text-center">
               <h1 className="text-6xl sm:text-8xl font-bold text-gray-200 mb-4">404</h1>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Halaman Tidak Ditemukan</h2>
-              <p className="text-gray-500 mb-6 text-sm sm:text-base">
-                Maaf, halaman yang Anda cari tidak ditemukan.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <a
-                  href="/"
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all text-sm sm:text-base"
-                >
-                  Kembali ke Home
-                </a>
-                <a
-                  href="/menu"
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all text-sm sm:text-base"
-                >
-                  Lihat Menu
-                </a>
-              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Halaman Tidak Ditemukan</h2>
+              <p className="text-gray-500 mb-6 text-sm">Maaf, halaman yang Anda cari tidak ditemukan.</p>
+              <a href="/" className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all inline-block">
+                Kembali ke Home
+              </a>
             </div>
           </div>
         } />
@@ -266,19 +216,17 @@ function App() {
 function ProtectedRoute({ children, allowedRoles = [] }) {
   const { user, role } = useAuthStore()
   const location = window.location
-  
+
   if (!user) {
-    // Redirect ke login dengan return URL
     return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />
   }
-  
+
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    // Redirect ke dashboard sesuai role
     if (role === 'admin') return <Navigate to="/admin" replace />
     if (role === 'cashier') return <Navigate to="/cashier" replace />
     return <Navigate to="/" replace />
   }
-  
+
   return children
 }
 
