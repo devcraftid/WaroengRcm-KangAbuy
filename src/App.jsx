@@ -49,7 +49,7 @@ import CashierNotifications from './pages/cashier/Notifications'
 import CashierActivityLog from './pages/cashier/ActivityLog'
 
 // ============================================
-// CUSTOMER PAGES (KHUSUS CUSTOMER LOGIN)
+// CUSTOMER PAGES
 // ============================================
 import CustomerHome from './pages/customer/CustomerHome'
 import CustomerMenu from './pages/customer/CustomerMenu'
@@ -60,7 +60,7 @@ import Membership from './pages/customer/Membership'
 import Contact from './pages/customer/Contact'
 
 // ============================================
-// PUBLIC PAGES (GUEST - TIDAK PERLU LOGIN)
+// PUBLIC PAGES
 // ============================================
 import Home from './pages/customer/Home'
 import Menu from './pages/customer/Menu'
@@ -131,7 +131,7 @@ function App() {
     <ErrorBoundary>
       <Routes>
         {/* ============================================ */}
-        {/* PUBLIC ROUTES - LANDING PAGE (Guest Layout) */}
+        {/* PUBLIC ROUTES (Guest Layout) */}
         {/* ============================================ */}
         <Route element={<GuestLayout />}>
           <Route path="/" element={<Home />} />
@@ -147,7 +147,6 @@ function App() {
 
         {/* ============================================ */}
         {/* CUSTOMER DASHBOARD (Customer Layout) */}
-        {/* HARUS LOGIN sebagai Customer */}
         {/* ============================================ */}
         <Route element={
           <ProtectedRoute allowedRoles={['customer']}>
@@ -164,7 +163,7 @@ function App() {
         </Route>
 
         {/* ============================================ */}
-        {/* CASHIER DASHBOARD */}
+        {/* CASHIER DASHBOARD (Cashier Layout) */}
         {/* ============================================ */}
         <Route element={
           <ProtectedRoute allowedRoles={['cashier', 'admin']}>
@@ -176,6 +175,8 @@ function App() {
           <Route path="/cashier/orders" element={<CashierOrders />} />
           <Route path="/cashier/tables" element={<CashierTableMonitoring />} />
           <Route path="/cashier/qr" element={<CashierQRTable />} />
+          {/* Payment Routes */}
+          <Route path="/cashier/payment" element={<CashierPayment />} />
           <Route path="/cashier/payment/:id" element={<CashierPayment />} />
           <Route path="/cashier/takeaway" element={<TakeawayQueue />} />
           <Route path="/cashier/history" element={<TransactionHistory />} />
@@ -186,7 +187,7 @@ function App() {
         </Route>
 
         {/* ============================================ */}
-        {/* ADMIN DASHBOARD */}
+        {/* ADMIN DASHBOARD (Admin Layout) */}
         {/* ============================================ */}
         <Route element={
           <ProtectedRoute allowedRoles={['admin']}>
@@ -220,17 +221,24 @@ function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* ============================================ */}
-        {/* 404 */}
+        {/* 404 PAGE */}
         {/* ============================================ */}
         <Route path="*" element={
           <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="text-center">
+            <div className="text-center max-w-md">
               <h1 className="text-6xl sm:text-8xl font-bold text-gray-200 mb-4">404</h1>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Halaman Tidak Ditemukan</h2>
-              <p className="text-gray-500 mb-6 text-sm">Maaf, halaman yang Anda cari tidak ditemukan.</p>
-              <a href="/" className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg inline-block text-sm">
-                Kembali ke Home
-              </a>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Halaman Tidak Ditemukan</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                Maaf, halaman yang Anda cari tidak ditemukan atau telah dipindahkan.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/" className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all text-sm">
+                  Kembali ke Home
+                </a>
+                <a href="/menu" className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all text-sm">
+                  Lihat Menu
+                </a>
+              </div>
             </div>
           </div>
         } />
@@ -240,7 +248,7 @@ function App() {
 }
 
 // ============================================
-// PROTECTED ROUTE
+// PROTECTED ROUTE COMPONENT
 // ============================================
 function ProtectedRoute({ children, allowedRoles = [] }) {
   const { user, role } = useAuthStore()
