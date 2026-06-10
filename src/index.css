@@ -1,221 +1,234 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================ */
+/* BASE                                                              */
+/* ================================================================ */
 @layer base {
-  * {
-    @apply border-gray-200;
+  * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-gray-100 text-gray-900 antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.5;
   }
 }
 
+/* ================================================================ */
+/* DESIGN TOKEN: App terpusat seperti ESB Order                      */
+/* ================================================================ */
+.app-wrapper {
+  /* Pusatkan konten di desktop, max 430px seperti ESB */
+  @apply relative min-h-screen bg-white mx-auto;
+  max-width: 480px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.10);
+}
+
+/* ================================================================ */
+/* COMPONENTS                                                        */
+/* ================================================================ */
 @layer components {
-  .gradient-primary {
-    @apply bg-gradient-to-r from-orange-500 to-red-600;
-  }
-  
-  .gradient-dark {
-    @apply bg-gradient-to-r from-gray-900 to-gray-800;
-  }
-  
-  .glass-effect {
-    @apply backdrop-blur-md bg-white/80 border border-white/20;
-  }
-  
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
-  }
-  
+
+  /* ── Primary Button (ESB pink/orange style) ── */
   .btn-primary {
-    @apply gradient-primary text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold 
-           hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 
-           active:scale-95 transform text-sm sm:text-base;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold text-white transition-all duration-200 active:scale-95 select-none;
+    background: #f05a28;
   }
-  
+  .btn-primary:hover { background: #d44d1f; }
+
+  /* ── Outline Button ── */
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg
+           font-medium text-sm border transition-all duration-200 active:scale-95;
+    border-color: #f05a28;
+    color: #f05a28;
+    background: white;
+  }
+  .btn-outline:hover { background: #fff5f2; }
+
+  /* ── Secondary Button ── */
   .btn-secondary {
-    @apply bg-white text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold 
-           border-2 border-gray-200 hover:border-orange-500 hover:text-orange-500 
-           transition-all duration-300 active:scale-95 transform text-sm sm:text-base;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold bg-white border border-gray-200 text-gray-700
+           hover:bg-gray-50 transition-all duration-200 active:scale-95;
   }
-  
+
+  /* ── Input Field ── */
   .input-field {
-    @apply w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-gray-300 
-           focus:ring-2 focus:ring-orange-500 focus:border-transparent 
-           transition-all duration-200 outline-none text-sm sm:text-base;
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
+           focus:ring-2 focus:border-transparent placeholder-gray-400
+           text-gray-900 text-sm outline-none transition-all duration-200;
+    --tw-ring-color: #f05a28;
+  }
+
+  /* ── Category Tab Active ── */
+  .cat-tab {
+    @apply relative px-3 py-2.5 text-sm font-medium whitespace-nowrap
+           text-gray-500 transition-all duration-200 flex-shrink-0;
+  }
+  .cat-tab.active {
+    color: #f05a28;
+    font-weight: 600;
+  }
+  .cat-tab.active::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-0.5 rounded-full;
+    background: #f05a28;
+  }
+
+  /* ── Menu Card ── */
+  .menu-card {
+    @apply bg-white rounded-xl overflow-hidden border border-gray-100
+           transition-all duration-200 cursor-pointer;
+  }
+  .menu-card:hover {
+    @apply border-gray-200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  /* ── Add Button (outline ESB style) ── */
+  .btn-add {
+    @apply w-full py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 active:scale-95;
+    border-color: #f05a28;
+    color: #f05a28;
+    background: white;
+  }
+  .btn-add:hover { background: #fff5f2; }
+
+  /* ── Quantity Counter ── */
+  .qty-counter {
+    @apply flex items-center justify-between rounded-lg overflow-hidden border;
+    border-color: #f05a28;
+  }
+  .qty-btn {
+    @apply w-8 h-7 flex items-center justify-center transition-colors;
+    color: #f05a28;
+  }
+  .qty-btn:hover { background: #fff5f2; }
+  .qty-num {
+    @apply flex-1 text-center text-sm font-semibold;
+    color: #f05a28;
+  }
+
+  /* ── Checkout Bar ── */
+  .checkout-bar {
+    @apply fixed bottom-0 left-1/2 -translate-x-1/2 z-50 flex items-center
+           gap-3 px-4 py-3 rounded-none;
+    width: 100%;
+    max-width: 480px;
+    background: #f05a28;
+  }
+
+  /* ── Section Header ── */
+  .section-header {
+    @apply text-xs font-semibold uppercase tracking-widest text-gray-500 mb-0.5;
+  }
+  .section-title {
+    @apply text-sm font-bold text-gray-900 uppercase tracking-wide;
+  }
+
+  /* ── Shimmer Loading ── */
+  .shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite linear;
   }
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Animations */
+/* ================================================================ */
+/* ANIMATIONS                                                        */
+/* ================================================================ */
 @keyframes shimmer {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
 }
 
-.shimmer {
-  background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite linear;
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
+.slide-up { animation: slideUp 0.3s ease-out; }
 
-/* ============================================ */
-/* MOBILE OPTIMIZATIONS */
-/* ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.25s ease-out; }
 
-@media (max-width: 640px) {
-  /* Hide scrollbar for mobile */
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  /* Safe area untuk iPhone notch */
-  .safe-top {
-    padding-top: env(safe-area-inset-top, 1rem);
-  }
-  
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 1rem);
-  }
-  
-  .safe-left {
-    padding-left: env(safe-area-inset-left, 0px);
-  }
-  
-  .safe-right {
-    padding-right: env(safe-area-inset-right, 0px);
-  }
-  
-  /* Bottom nav spacing */
-  .has-bottom-nav {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
-  }
-  
-  /* Line clamp untuk mobile */
+/* ================================================================ */
+/* UTILITIES                                                         */
+/* ================================================================ */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
-  
   .line-clamp-2 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-  
-  .line-clamp-3 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-  }
-  
-  /* Tap target minimum 44px */
-  .tap-target {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  /* Prevent zoom on input focus */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
+
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 
-/* Tablet optimizations */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
+/* ================================================================ */
+/* SCROLLBAR                                                         */
+/* ================================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+/* ================================================================ */
+/* FOCUS                                                             */
+/* ================================================================ */
+*:focus-visible {
+  outline: 2px solid #f05a28;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+*:focus:not(:focus-visible) { outline: none; }
+
+/* ================================================================ */
+/* MOBILE                                                            */
+/* ================================================================ */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
 }
 
-/* Print Styles */
+/* Print */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  body {
-    background: white;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
 }
 
-/* Loading animation */
+/* Loading dots */
 @keyframes pulse-dot {
   0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+  40%           { transform: scale(1); }
 }
-
-.loading-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
+.loading-dots { display: flex; align-items: center; justify-content: center; gap: 5px; }
 .loading-dots span {
-  width: 8px;
-  height: 8px;
-  background-color: #f97316;
+  width: 8px; height: 8px;
+  background: #f05a28;
   border-radius: 50%;
   display: inline-block;
   animation: pulse-dot 1.4s infinite ease-in-out both;
 }
-
 .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 .loading-dots span:nth-child(3) { animation-delay: 0s; }
-
-/* Focus visible */
-*:focus-visible {
-  outline: 2px solid #f97316;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Disable focus outline for mouse users */
-*:focus:not(:focus-visible) {
-  outline: none;
-}

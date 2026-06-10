@@ -2,24 +2,28 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ChevronRight, Star, MapPin, Phone, Clock, Instagram,
-  MessageCircle, ShoppingBag, UtensilsCrossed, Sparkles,
-  Package, Zap, Quote, Percent, Calendar
+  UtensilsCrossed, Star, MapPin, Phone, Clock, Instagram,
+  MessageCircle, ShoppingBag, Sparkles, ChevronRight,
+  Percent, Flame, Package
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { formatCurrency, formatDate } from '../../utils/format'
+import { formatCurrency } from '../../utils/format'
+
+const PRIMARY = '#f05a28'
+
+const fadeUp = {
+  hidden:  { opacity: 0, y: 16 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.08 } }),
+}
 
 export default function Home() {
-  const [settings, setSettings] = useState(null)
+  const [settings, setSettings]     = useState(null)
   const [bestSellers, setBestSellers] = useState([])
-  const [categories, setCategories] = useState([])
-  const [promotions, setPromotions] = useState([])
-  const [testimonials, setTestimonials] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [categories, setCategories]  = useState([])
+  const [promotions, setPromotions]  = useState([])
+  const [loading, setLoading]        = useState(true)
 
-  useEffect(() => {
-    loadHomeData()
-  }, [])
+  useEffect(() => { loadHomeData() }, [])
 
   const loadHomeData = async () => {
     try {
@@ -28,23 +32,15 @@ export default function Home() {
         { data: bestSellersData },
         { data: categoriesData },
         { data: promotionsData },
-        { data: testimonialsData }
       ] = await Promise.all([
         supabase.from('website_settings').select('*').single(),
-        supabase.from('menus').select('*').eq('is_available', true).order('total_sold', { ascending: false }).limit(8),
+        supabase.from('menus').select('*').eq('is_available', true).order('total_sold', { ascending: false }).limit(6),
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('promotions').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(4),
-        supabase.from('website_testimonials').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(10)
+        supabase.from('promotions').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
       ])
-
-      setSettings(settingsData || {
-        restaurant_name: 'Waroeng RCM Kang Abuy',
-        tagline: 'Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer'
-      })
+      setSettings(settingsData || { restaurant_name: 'Waroeng RCM Kang Abuy', tagline: 'Makanan Enak, Harga Ekonomis' })
       setBestSellers(bestSellersData || [])
       setCategories(categoriesData || [])
-      
-      // Filter promo aktif
       const now = new Date()
       setPromotions((promotionsData || []).filter(p => {
         if (!p.is_active) return false
@@ -52,18 +48,9 @@ export default function Home() {
         if (p.end_date && new Date(p.end_date) < now) return false
         return true
       }))
-      setTestimonials(testimonialsData || [])
-    } catch (error) {
-      console.error('Error loading home data:', error)
-      // Set default values on error
-      setSettings({
-        restaurant_name: 'Waroeng RCM Kang Abuy',
-        tagline: 'Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer'
-      })
-      setBestSellers([])
-      setCategories([])
-      setPromotions([])
-      setTestimonials([])
+    } catch (err) {
+      console.error(err)
+      setSettings({ restaurant_name: 'Waroeng RCM Kang Abuy', tagline: 'Makanan Enak, Harga Ekonomis' })
     } finally {
       setLoading(false)
     }
@@ -71,10 +58,10 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 text-sm">Memuat...</p>
+          <div className="loading-dots"><span /><span /><span /></div>
+          <p className="text-xs text-gray-400 mt-3">Memuat...</p>
         </div>
       </div>
     )
@@ -82,286 +69,270 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* HERO BANNER */}
-      <section className="relative bg-gradient-to-br from-orange-500 via-red-500 to-red-700 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute top-10 left-10 w-32 sm:w-64 h-32 sm:h-64 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-48 sm:w-96 h-48 sm:h-96 bg-white/5 rounded-full blur-3xl"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 md:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
-          >
-            {/* Logo */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              className="mb-4 sm:mb-6"
-            >
-              {settings?.logo_url ? (
-                <img src={settings.logo_url} alt="Logo" 
-                  className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-2xl object-contain bg-white p-2 shadow-2xl" />
-              ) : (
-                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
-                  <UtensilsCrossed className="w-8 h-8 sm:w-12 sm:h-12 text-orange-600" />
-                </div>
-              )}
-            </motion.div>
-            
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-3 sm:mb-4 leading-tight px-2">
-              {settings?.restaurant_name || 'WAROENG RCM KANG ABUY'}
-            </h1>
-            <p className="text-sm sm:text-xl md:text-2xl mb-6 sm:mb-8 text-orange-100 max-w-2xl mx-auto px-4">
-              {settings?.tagline || 'Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer'}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-              <Link to="/menu"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-white text-orange-600 rounded-full font-bold hover:shadow-2xl hover:scale-105 transition-all duration-300 text-sm sm:text-base">
-                <UtensilsCrossed className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Lihat Menu
-              </Link>
-              {settings?.whatsapp_number && (
-                <a href={`https://wa.me/${settings.whatsapp_number?.replace(/^0/, '62').replace(/^\+/, '')}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-green-500 text-white rounded-full font-bold hover:bg-green-600 hover:shadow-2xl hover:scale-105 transition-all duration-300 text-sm sm:text-base">
-                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> WhatsApp
-                </a>
-              )}
-            </div>
-          </motion.div>
-        </div>
-        
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-white">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H0Z" />
-          </svg>
-        </div>
-      </section>
 
-      {/* PROMO SECTION */}
-      {promotions.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                <Percent className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-red-500" />
-                Promo Spesial
-              </h2>
-              <p className="text-sm sm:text-base text-gray-500">Jangan lewatkan penawaran menarik!</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {promotions.map((promo, i) => (
-                <motion.div key={promo.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                  className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl overflow-hidden border border-orange-200 hover:shadow-xl transition-all">
-                  {promo.image_url ? (
-                    <div className="relative h-40 overflow-hidden">
-                      <img src={promo.image_url} alt={promo.title} className="w-full h-full object-cover" />
-                      <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">PROMO</div>
-                    </div>
-                  ) : (
-                    <div className="relative h-40 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                      <Percent className="w-16 h-16 text-white/50" />
-                      <div className="absolute top-3 right-3 bg-white/90 text-red-600 px-3 py-1 rounded-full text-xs font-bold">PROMO</div>
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{promo.title}</h3>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{promo.description || 'Promo spesial!'}</p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-lg font-bold text-red-600">
-                        {promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : formatCurrency(promo.discount_value)}
-                      </span>
-                      <Link to="/menu" className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-medium hover:bg-orange-600">
-                        Pesan
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* BEST SELLER */}
-      <section className="py-12 sm:py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-yellow-500" /> Menu Terfavorit
-            </h2>
-            <p className="text-sm sm:text-base text-gray-500">Pilihan terbaik yang paling banyak dipesan</p>
-          </div>
-
-          {bestSellers.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {bestSellers.map((menu, i) => (
-                <motion.div key={menu.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden group">
-                  <div className="relative h-32 sm:h-40 bg-gradient-to-br from-orange-100 to-red-100 overflow-hidden">
-                    {menu.image_url ? (
-                      <img src={menu.image_url} alt={menu.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full"><UtensilsCrossed className="w-8 h-8 text-orange-300" /></div>
-                    )}
-                    <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold flex items-center">
-                      <Star className="w-3 h-3 mr-1 fill-current" />Best Seller
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-1">{menu.name}</h3>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm sm:text-lg font-bold text-orange-600">{formatCurrency(menu.price)}</span>
-                      <Link to={`/menu?item=${menu.id}`} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all">
-                        <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+      {/* ════════════════════════════════ */}
+      {/* HERO — gambar restoran (ESB style) */}
+      {/* ════════════════════════════════ */}
+      <section className="relative">
+        {/* Banner */}
+        <div className="relative w-full overflow-hidden" style={{ height: 200, background: 'linear-gradient(135deg, #fff5f2 0%, #fde8dc 50%, #ffd5c0 100%)' }}>
+          {settings?.banner_url ? (
+            <img src={settings.banner_url} alt="Banner" className="w-full h-full object-cover" />
           ) : (
-            <div className="text-center py-8 text-gray-400">
-              <UtensilsCrossed className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">Belum ada menu best seller</p>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: PRIMARY }}>
+                <UtensilsCrossed className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-sm font-bold" style={{ color: PRIMARY }}>Waroeng RCM Kang Abuy</p>
             </div>
           )}
+        </div>
 
-          <div className="text-center mt-6">
-            <Link to="/menu" className="inline-flex items-center text-orange-600 font-semibold hover:text-orange-700 text-sm">
-              Lihat Semua Menu <ChevronRight className="w-4 h-4 ml-1" />
-            </Link>
+        {/* Resto info card */}
+        <div className="bg-white mx-3 -mt-6 relative z-10 rounded-2xl border border-gray-100 p-4"
+             style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+          <div className="flex items-center gap-3">
+            {settings?.logo_url && (
+              <img src={settings.logo_url} alt="Logo"
+                className="w-14 h-14 rounded-xl object-contain border border-gray-100 flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-gray-900 text-base leading-snug">
+                {settings?.restaurant_name || 'Waroeng RCM Kang Abuy'}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                <p className="text-xs text-gray-500">
+                  {settings?.operating_hours || 'Buka setiap hari'}
+                </p>
+              </div>
+              {settings?.address && (
+                <div className="flex items-start gap-1 mt-1.5">
+                  <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: PRIMARY }} />
+                  <p className="text-xs text-gray-400 line-clamp-1">{settings.address}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CATEGORIES */}
-      {categories.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                <Package className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-orange-500" /> Kategori Menu
-              </h2>
-              <p className="text-sm text-gray-500">Pilih berdasarkan kategori favoritmu</p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {categories.map((cat, i) => (
-                <motion.div key={cat.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="text-center">
-                  <Link to={`/menu?category=${cat.id}`}>
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center mb-3 hover:shadow-lg transition-all hover:scale-110">
-                      {cat.image_url ? <img src={cat.image_url} alt="" className="w-full h-full object-cover rounded-2xl" /> :
-                        <UtensilsCrossed className="w-8 h-8 text-orange-400" />}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-xs sm:text-sm">{cat.name}</h3>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+      {/* ─── Order Type pill (ESB style) ─── */}
+      <div className="mx-3 mt-3">
+        <div className="border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UtensilsCrossed className="w-4 h-4" style={{ color: PRIMARY }} />
+            <span className="text-sm font-medium text-gray-700">Takeaway / Dine In</span>
           </div>
-        </section>
-      )}
+          <Link to="/menu"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+            style={{ background: PRIMARY }}>
+            Pesan
+          </Link>
+        </div>
+      </div>
 
-      {/* HOW TO ORDER */}
-      <section className="py-12 sm:py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-              <Zap className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-yellow-500" /> Cara Pemesanan
-            </h2>
-            <p className="text-sm text-gray-500">Mudah dan cepat, cukup 3 langkah</p>
+      {/* ─── PROMO ─── */}
+      {promotions.length > 0 && (
+        <section className="mt-5">
+          <div className="px-3 flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-gray-900">Promo Spesial</h2>
+            <Link to="/menu" className="text-xs font-medium" style={{ color: PRIMARY }}>
+              Lihat semua →
+            </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { step: '01', icon: UtensilsCrossed, title: 'Pilih Menu', desc: 'Pilih menu favorit Anda', color: 'from-orange-500 to-red-500' },
-              { step: '02', icon: ShoppingBag, title: 'Checkout', desc: 'Bayar via Cash atau QRIS', color: 'from-blue-500 to-indigo-500' },
-              { step: '03', icon: Package, title: 'Siap!', desc: 'Pesanan diproses dan siap', color: 'from-green-500 to-emerald-500' }
-            ].map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.2 }}
-                className="relative text-center">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-xs z-10">{item.step}</div>
-                <div className="bg-white rounded-2xl p-6 pt-8 sm:pt-10 shadow-sm">
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
-                    <item.icon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{item.title}</h3>
-                  <p className="text-sm text-gray-500">{item.desc}</p>
+          <div className="flex gap-3 overflow-x-auto px-3 hide-scrollbar pb-1">
+            {promotions.map((promo, i) => (
+              <motion.div
+                key={promo.id}
+                custom={i} variants={fadeUp} initial="hidden" animate="visible"
+                className="flex-shrink-0 w-52 rounded-xl overflow-hidden border border-gray-100 shadow-card"
+              >
+                <div className="relative h-28 bg-gray-100">
+                  {promo.image_url ? (
+                    <img src={promo.image_url} alt={promo.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center"
+                         style={{ background: 'linear-gradient(135deg, #fff5f2, #ffddd0)' }}>
+                      <Percent className="w-10 h-10" style={{ color: PRIMARY, opacity: 0.4 }} />
+                    </div>
+                  )}
+                  <span className="absolute top-2 right-2 text-xs font-bold text-white px-2 py-0.5 rounded-full"
+                    style={{ background: PRIMARY }}>
+                    {promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : `DISKON`}
+                  </span>
+                </div>
+                <div className="p-3 bg-white">
+                  <p className="text-xs font-semibold text-gray-900 line-clamp-1">{promo.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{promo.description || 'Promo spesial!'}</p>
                 </div>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      {testimonials.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                <Quote className="w-6 h-6 sm:w-8 sm:h-8 inline mr-2 text-orange-500" /> Testimoni
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {testimonials.map((t, i) => (
-                <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                  className="bg-gray-50 rounded-2xl p-4 sm:p-6 relative">
-                  <Quote className="w-8 h-8 text-orange-200 absolute top-3 right-3" />
-                  <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold">
-                      {t.customer_name?.[0] || 'A'}
-                    </div>
-                    <div className="ml-3">
-                      <h4 className="font-semibold text-sm">{t.customer_name}</h4>
-                      <div className="flex">{[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < t.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />)}</div>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-xs italic">"{t.review}"</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
         </section>
       )}
 
-      {/* FOOTER */}
-      <footer className="bg-gray-900 text-white py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
-                  <UtensilsCrossed className="w-6 h-6 text-white" />
+      {/* ─── BEST SELLER ─── */}
+      <section className="mt-5">
+        <div className="px-3 flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-gray-900">Menu Terfavorit</h2>
+          <Link to="/menu" className="text-xs font-medium" style={{ color: PRIMARY }}>
+            Lihat semua →
+          </Link>
+        </div>
+        {bestSellers.length > 0 ? (
+          <div className="flex gap-3 overflow-x-auto px-3 hide-scrollbar pb-1">
+            {bestSellers.map((menu, i) => (
+              <motion.div
+                key={menu.id}
+                custom={i} variants={fadeUp} initial="hidden" animate="visible"
+                className="flex-shrink-0 w-36 rounded-xl overflow-hidden border border-gray-100 shadow-card bg-white"
+              >
+                <div className="relative h-28 bg-gray-100 overflow-hidden">
+                  {menu.image_url ? (
+                    <img src={menu.image_url} alt={menu.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <UtensilsCrossed className="w-8 h-8 text-gray-300" />
+                    </div>
+                  )}
+                  <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 text-[10px] font-bold
+                                   text-white px-1.5 py-0.5 rounded-full"
+                    style={{ background: '#f59e0b' }}>
+                    <Star className="w-2.5 h-2.5 fill-current" /> Best
+                  </span>
                 </div>
-                <h3 className="text-lg font-bold">{settings?.restaurant_name || 'WAROENG RCM'}</h3>
-              </div>
-              <p className="text-gray-400 text-xs">{settings?.tagline}</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Kontak</h4>
-              <div className="space-y-2 text-gray-400 text-xs">
-                {settings?.address && <p className="flex items-center"><MapPin className="w-3 h-3 mr-2" />{settings.address}</p>}
-                {settings?.whatsapp_number && <p className="flex items-center"><Phone className="w-3 h-3 mr-2" />{settings.whatsapp_number}</p>}
-                {settings?.operating_hours && <p className="flex items-center"><Clock className="w-3 h-3 mr-2" />{settings.operating_hours}</p>}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Ikuti Kami</h4>
-              {settings?.instagram_url && (
-                <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-lg text-sm hover:bg-gray-700">
-                  <Instagram className="w-4 h-4" /><span>Instagram</span>
-                </a>
-              )}
-            </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">{menu.name}</p>
+                  <p className="text-xs font-bold mt-1" style={{ color: PRIMARY }}>{formatCurrency(menu.price)}</p>
+                  <Link to={`/menu?item=${menu.id}`}
+                    className="block w-full text-center text-[11px] font-semibold mt-2 py-1.5 rounded-lg border"
+                    style={{ borderColor: PRIMARY, color: PRIMARY }}>
+                    Add
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <div className="border-t border-gray-800 pt-6 text-center">
-            <p className="text-gray-500 text-xs">&copy; {new Date().getFullYear()} {settings?.restaurant_name || 'WAROENG RCM KANG ABUY'}. All rights reserved.</p>
+        ) : (
+          <div className="px-3 text-center py-8">
+            <UtensilsCrossed className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+            <p className="text-xs text-gray-400">Belum ada menu</p>
           </div>
+        )}
+      </section>
+
+      {/* ─── KATEGORI ─── */}
+      {categories.length > 0 && (
+        <section className="mt-5">
+          <div className="px-3 mb-3">
+            <h2 className="text-sm font-bold text-gray-900">Kategori</h2>
+          </div>
+          <div className="px-3 grid grid-cols-3 gap-2.5">
+            {categories.slice(0, 6).map((cat, i) => (
+              <motion.div
+                key={cat.id}
+                custom={i} variants={fadeUp} initial="hidden" animate="visible"
+              >
+                <Link to={`/menu?category=${cat.id}`}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-orange-200 bg-white transition-all group">
+                  <div className="w-11 h-11 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center
+                                  group-hover:bg-orange-50 transition-colors">
+                    {cat.image_url ? (
+                      <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <UtensilsCrossed className="w-5 h-5 text-gray-300" />
+                    )}
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-700 text-center line-clamp-1">{cat.name}</p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+          {categories.length > 6 && (
+            <div className="px-3 mt-2">
+              <Link to="/menu"
+                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-xl border border-gray-200
+                           text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                Lihat semua kategori
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ─── CTA ORDER ─── */}
+      <section className="mt-6 px-3">
+        <Link to="/menu"
+          className="flex items-center justify-between w-full px-5 py-4 rounded-2xl text-white"
+          style={{ background: `linear-gradient(135deg, ${PRIMARY}, #d44d1f)` }}>
+          <div>
+            <p className="font-bold text-base">Pesan Sekarang</p>
+            <p className="text-xs text-white/80 mt-0.5">Lihat menu lengkap kami</p>
+          </div>
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-white" />
+          </div>
+        </Link>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="mt-8 bg-gray-900 text-white px-4 py-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+               style={{ background: PRIMARY }}>
+            <UtensilsCrossed className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-sm">{settings?.restaurant_name || 'WAROENG RCM'}</p>
+            <p className="text-[11px] text-gray-400">Kang Abuy</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+          {settings?.tagline || 'Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer'}
+        </p>
+        <div className="space-y-2">
+          {settings?.address && (
+            <div className="flex items-start gap-2 text-xs text-gray-400">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-px" style={{ color: PRIMARY }} />
+              <span>{settings.address}</span>
+            </div>
+          )}
+          {settings?.whatsapp_number && (
+            <a href={`https://wa.me/${settings.whatsapp_number?.replace(/^0/, '62').replace(/^\+/, '')}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+              <Phone className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+              <span>{settings.whatsapp_number}</span>
+            </a>
+          )}
+          {settings?.operating_hours && (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+              <span>{settings.operating_hours}</span>
+            </div>
+          )}
+          {settings?.instagram_url && (
+            <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+              <Instagram className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+              <span>Instagram</span>
+            </a>
+          )}
+          {settings?.whatsapp_number && (
+            <a href={`https://wa.me/${settings.whatsapp_number?.replace(/^0/, '62').replace(/^\+/, '')}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+              <MessageCircle className="w-3.5 h-3.5 text-green-400" />
+              <span>WhatsApp</span>
+            </a>
+          )}
+        </div>
+        <div className="border-t border-gray-800 mt-6 pt-4">
+          <p className="text-[11px] text-gray-600 text-center">
+            © {new Date().getFullYear()} {settings?.restaurant_name || 'Waroeng RCM Kang Abuy'}
+          </p>
         </div>
       </footer>
     </div>

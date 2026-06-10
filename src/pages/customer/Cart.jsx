@@ -1,18 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { 
-  ShoppingCart, 
-  Plus, 
-  Minus, 
-  Trash2, 
-  ArrowLeft, 
-  ShoppingBag,
-  UtensilsCrossed,
-  MinusCircle,
-  PlusCircle
-} from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, UtensilsCrossed, ArrowLeft } from 'lucide-react'
 import useCartStore from '../../stores/cartStore'
 import { formatCurrency } from '../../utils/format'
+
+const PRIMARY = '#f05a28'
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, getTotal, clearCart } = useCartStore()
@@ -21,151 +13,143 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingCart className="w-12 h-12 text-gray-300" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Keranjang Kosong</h2>
-          <p className="text-gray-500 mb-6">Yuk, tambahkan menu favoritmu!</p>
-          <Link
-            to="/menu"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-          >
-            <ShoppingBag className="w-5 h-5 mr-2" />
-            Lihat Menu
-          </Link>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 bg-white">
+        <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-5">
+          <ShoppingCart className="w-9 h-9" style={{ color: PRIMARY }} />
         </div>
+        <h2 className="font-bold text-gray-900 text-base mb-1">Keranjang Kosong</h2>
+        <p className="text-xs text-gray-400 text-center mb-6">Yuk tambahkan menu favorit kamu!</p>
+        <Link to="/menu"
+          className="px-6 py-2.5 rounded-lg text-white text-sm font-semibold"
+          style={{ background: PRIMARY }}>
+          Lihat Menu
+        </Link>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="w-5 h-5 mr-1" />
-              <span className="text-sm">Kembali</span>
-            </button>
-            <h1 className="text-lg font-bold text-gray-900">Keranjang</h1>
-            <button
-              onClick={clearCart}
-              className="text-sm text-red-500 hover:text-red-600 font-medium"
-            >
-              <Trash2 className="w-4 h-4 inline mr-1" />
-              Hapus Semua
-            </button>
-          </div>
+      {/* ─── SUB-HEADER ─── */}
+      <div className="bg-white border-b border-gray-100 sticky top-14 z-20">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <button onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali</span>
+          </button>
+          <p className="font-bold text-gray-900 text-sm">Keranjang ({items.length} item)</p>
+          <button onClick={clearCart}
+            className="text-xs font-medium hover:opacity-70" style={{ color: PRIMARY }}>
+            Hapus
+          </button>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Cart Items */}
-        <div className="space-y-3 mb-24">
-          <AnimatePresence>
-            {items.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, height: 0 }}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-              >
-                <div className="p-4">
-                  <div className="flex items-center space-x-3">
-                    {/* Item Image */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.image_url ? (
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <UtensilsCrossed className="w-8 h-8 text-orange-300" />
-                      )}
+      {/* ─── ITEMS ─── */}
+      <div className="px-3 pt-3 pb-44 space-y-2">
+        <AnimatePresence>
+          {items.map(item => (
+            <motion.div
+              key={item.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
+            >
+              <div className="flex items-center gap-3 p-3">
+                {/* Image */}
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <UtensilsCrossed className="w-6 h-6 text-gray-300" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name}</p>
+                  <p className="text-xs font-medium mt-0.5" style={{ color: PRIMARY }}>
+                    {formatCurrency(item.price)}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-2">
+                    {/* Qty counter */}
+                    <div className="flex items-center rounded-lg overflow-hidden border" style={{ borderColor: PRIMARY }}>
+                      <button
+                        onClick={() => item.quantity <= 1 ? removeItem(item.id) : updateQuantity(item.id, item.quantity - 1)}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-orange-50 transition-colors"
+                        style={{ color: PRIMARY }}>
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="px-3 text-sm font-semibold" style={{ color: PRIMARY }}>
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-orange-50 transition-colors"
+                        style={{ color: PRIMARY }}>
+                        <Plus className="w-3 h-3" />
+                      </button>
                     </div>
 
-                    {/* Item Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                        {item.name}
-                      </h3>
-                      <p className="text-sm text-orange-600 font-bold mt-1">
-                        {formatCurrency(item.price)}
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-gray-900">
+                        {formatCurrency(item.price * item.quantity)}
                       </p>
-                      
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center bg-gray-100 rounded-lg">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-2 hover:bg-gray-200 rounded-l-lg transition-colors"
-                          >
-                            <Minus className="w-4 h-4 text-gray-600" />
-                          </button>
-                          <span className="px-3 py-1 text-sm font-bold text-gray-900 min-w-[2rem] text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-2 hover:bg-gray-200 rounded-r-lg transition-colors"
-                          >
-                            <Plus className="w-4 h-4 text-gray-600" />
-                          </button>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-bold text-gray-900">
-                            {formatCurrency(item.price * item.quantity)}
-                          </span>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+                      <button onClick={() => removeItem(item.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Add more */}
+        <Link to="/menu"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border-2 border-dashed
+                     text-sm font-medium transition-colors hover:bg-orange-50"
+          style={{ borderColor: '#ffd0bc', color: PRIMARY }}>
+          <Plus className="w-4 h-4" />
+          Tambah menu lagi
+        </Link>
       </div>
 
-      {/* Bottom Bar - Fixed untuk Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-20">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500">Total Pesanan</span>
-            <span className="text-xl font-bold text-orange-600">{formatCurrency(total)}</span>
+      {/* ─── BOTTOM CHECKOUT BAR ─── */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-app bg-white border-t border-gray-100"
+           style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+        {/* Summary */}
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex justify-between items-center text-xs text-gray-400 mb-1">
+            <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} item)</span>
+            <span className="font-medium text-gray-600">{formatCurrency(total)}</span>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <Link
-              to="/menu"
-              className="flex-shrink-0 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Tambah
-            </Link>
-            <button
-              onClick={() => navigate('/checkout')}
-              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/25 transition-all text-base"
-            >
-              Checkout
-            </button>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-bold text-gray-900">Total</span>
+            <span className="text-base font-bold" style={{ color: PRIMARY }}>{formatCurrency(total)}</span>
           </div>
         </div>
-      </div>
 
-      {/* Spacer untuk bottom bar */}
-      <div className="h-24"></div>
+        {/* CTA */}
+        <div className="px-4 pt-2 pb-4">
+          <button
+            onClick={() => navigate('/checkout')}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 active:opacity-80"
+            style={{ background: PRIMARY }}>
+            <ShoppingCart className="w-4 h-4" />
+            CHECKOUT — {formatCurrency(total)}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
