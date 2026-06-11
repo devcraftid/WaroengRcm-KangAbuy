@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Banknote, QrCode, MapPin, Phone, User,
   ShoppingBag, CheckCircle, Upload,
-  ArrowLeft, Clock
+  ArrowLeft, Clock, UtensilsCrossed
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useCartStore from '../../stores/cartStore'
@@ -314,145 +314,200 @@ export default function Checkout() {
       <div className="max-w-3xl mx-auto px-4 py-6 pb-24">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Order Type */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border">
-            <h2 className="text-base font-semibold mb-3">Tipe Pesanan</h2>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                <UtensilsCrossed className="w-4 h-4 text-orange-600" />
+              </div>
+              <h2 className="text-base font-bold text-gray-900">Tipe Pesanan</h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { id: 'dine_in', label: '🍽️ Dine In' },
-                { id: 'takeaway_waiting', label: '🛍️ Takeaway' },
-                { id: 'takeaway_pickup', label: '📦 Pickup' }
+                { id: 'dine_in', label: 'Makan di Tempat', desc: 'Dine In' },
+                { id: 'takeaway_waiting', label: 'Bawa Pulang', desc: 'Takeaway' }
               ].map(type => (
                 <button key={type.id} type="button" onClick={() => setOrderTypeState(type.id)}
-                  className={`p-3 rounded-xl border-2 text-center transition-all text-sm font-semibold ${
-                    orderTypeState === type.id ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    orderTypeState === type.id ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200'
                   }`}>
-                  {type.label}
+                  <p className={`font-bold text-sm ${orderTypeState === type.id ? 'text-orange-700' : 'text-gray-700'}`}>{type.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{type.desc}</p>
                 </button>
               ))}
             </div>
 
             {orderTypeState === 'dine_in' && (
-              <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-1" />Nomor Meja <span className="text-red-500">*</span>
-                </label>
-                <input type="text" value={tableNumber}
-                  onChange={(e) => { setTableNumber(e.target.value); setTableId(e.target.value) }}
-                  placeholder="Contoh: A01" required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-orange-300 bg-white text-lg font-bold text-center" />
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Nomor Meja <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input type="text" value={tableNumber}
+                    onChange={(e) => { setTableNumber(e.target.value); setTableId(e.target.value) }}
+                    placeholder="Contoh: Meja 12" required
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all" />
+                </div>
               </div>
             )}
           </div>
 
           {/* Customer Info */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border">
-            <h2 className="text-base font-semibold mb-3">Informasi Pemesan</h2>
-            <div className="space-y-3">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <User className="w-4 h-4 text-blue-600" />
+              </div>
+              <h2 className="text-base font-bold text-gray-900">Informasi Pemesan</h2>
+            </div>
+            
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Nama <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Nama Anda" required className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm" />
+                    placeholder="Masukkan nama Anda" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">No. WhatsApp <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">No. WhatsApp <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="0812-3456-7890" required className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm" />
+                    placeholder="0812-3456-7890" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Catatan Pesanan</label>
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows="2"
-                  placeholder="Contoh: Tidak pedas..." className="w-full px-4 py-3 rounded-xl border text-sm resize-none" />
+                  placeholder="Tambahkan instruksi khusus..." className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm resize-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
               </div>
             </div>
           </div>
 
           {/* Payment Method */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border">
-            <h2 className="text-base font-semibold mb-3">Metode Pembayaran</h2>
-            <p className="text-xs text-gray-500 mb-3">Semua pembayaran akan divalidasi oleh kasir.</p>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <Banknote className="w-4 h-4 text-green-600" />
+                </div>
+                <h2 className="text-base font-bold text-gray-900">Metode Pembayaran</h2>
+              </div>
+            </div>
             
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <button type="button" onClick={() => setPaymentMethod('cash')}
-                className={`p-4 rounded-xl border-2 text-left ${paymentMethod === 'cash' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-                <Banknote className={`w-8 h-8 mb-2 ${paymentMethod === 'cash' ? 'text-green-600' : 'text-gray-400'}`} />
-                <h3 className="font-semibold text-sm">💵 Cash</h3>
-                <p className="text-xs text-gray-500 mt-1">Bayar di kasir → Validasi</p>
+                className={`p-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${paymentMethod === 'cash' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'}`}>
+                <Banknote className="w-6 h-6" />
+                <span className="font-bold text-sm">Tunai di Kasir</span>
               </button>
               <button type="button" onClick={() => setPaymentMethod('qris')}
-                className={`p-4 rounded-xl border-2 text-left ${paymentMethod === 'qris' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-                <QrCode className={`w-8 h-8 mb-2 ${paymentMethod === 'qris' ? 'text-blue-600' : 'text-gray-400'}`} />
-                <h3 className="font-semibold text-sm">📱 QRIS</h3>
-                <p className="text-xs text-gray-500 mt-1">Transfer → Upload → Validasi</p>
+                className={`p-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${paymentMethod === 'qris' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'}`}>
+                <QrCode className="w-6 h-6" />
+                <span className="font-bold text-sm">QRIS Transfer</span>
               </button>
             </div>
 
             {paymentMethod === 'qris' && (
-              <div className="space-y-4">
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 pt-4 border-t border-gray-100 space-y-4">
                 {qrisImage ? (
-                  <div className="text-center p-4 bg-gray-50 rounded-xl">
-                    <p className="text-sm font-medium mb-2">Scan QRIS:</p>
-                    <img src={qrisImage} alt="QRIS" className="w-48 h-48 mx-auto rounded-xl" />
-                    <p className="text-sm font-bold text-orange-600 mt-2">Total: {formatCurrency(total)}</p>
+                  <div className="bg-gray-50 p-4 rounded-xl flex flex-col items-center border border-gray-200">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Scan QRIS Berikut</p>
+                    <div className="bg-white p-3 rounded-2xl shadow-sm mb-3">
+                      <img src={qrisImage} alt="QRIS" className="w-40 h-40 object-cover rounded-xl" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">Total Tagihan:</p>
+                    <p className="text-lg font-bold text-orange-600">{formatCurrency(total)}</p>
                   </div>
                 ) : (
-                  <div className="text-center p-4 bg-yellow-50 rounded-xl text-sm text-yellow-700">
-                    QRIS belum diatur. Silakan pilih Cash.
+                  <div className="text-center p-4 bg-yellow-50 rounded-xl text-sm font-medium text-yellow-700 border border-yellow-200">
+                    Sistem QRIS belum dikonfigurasi. Silakan pilih Tunai.
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Upload Bukti Pembayaran</label>
-                  <label className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-orange-400 block">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Upload Bukti Transfer</label>
+                  <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-all bg-gray-50">
                     {proofPreview ? (
-                      <div>
-                        <img src={proofPreview} alt="Bukti" className="max-h-40 mx-auto rounded-lg mb-2" />
-                        <span className="text-xs text-gray-500">Klik untuk ganti</span>
-                      </div>
+                      <>
+                        <img src={proofPreview} alt="Bukti" className="h-32 object-contain rounded-lg shadow-sm mb-3" />
+                        <span className="text-xs font-bold text-orange-600 bg-orange-100 px-3 py-1.5 rounded-full">Ganti Gambar</span>
+                      </>
                     ) : (
-                      <div>
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">Upload bukti transfer</p>
-                      </div>
+                      <>
+                        <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                          <Upload className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-700">Pilih Foto Bukti</p>
+                        <p className="text-xs text-gray-500 mt-1">Format: JPG, PNG</p>
+                      </>
                     )}
                     <input type="file" accept="image/*" onChange={handleProofChange} className="hidden" />
                   </label>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
 
-          {/* Order Summary */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border">
-            <h2 className="text-base font-semibold mb-3">Ringkasan</h2>
-            {items.map(item => (
-              <div key={item.cartItemId || item.id} className="flex justify-between text-sm py-1">
-                <div className="flex flex-col">
-                  <span className="text-gray-600">{item.name} x{item.quantity}</span>
-                  {item.note && <span className="text-[10px] text-orange-600">📝 {item.note}</span>}
-                </div>
-                <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+          {/* Receipt Style Order Summary */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
+            {/* Receipt jagged edge top */}
+            <div className="h-3 w-full" style={{ backgroundImage: 'radial-gradient(circle at 10px 0, transparent 10px, white 11px)', backgroundSize: '20px 20px', backgroundRepeat: 'repeat-x' }}></div>
+            
+            <div className="px-5 pt-3 pb-5">
+              <div className="flex items-center gap-2 mb-4">
+                <ShoppingBag className="w-4 h-4 text-gray-400" />
+                <h2 className="text-base font-bold text-gray-900">Ringkasan Pesanan</h2>
               </div>
-            ))}
-            <div className="border-t mt-3 pt-3 flex justify-between items-center">
-              <span className="text-lg font-bold">Total</span>
-              <span className="text-2xl font-bold text-orange-600">{formatCurrency(total)}</span>
+              
+              <div className="space-y-3 mb-4">
+                {items.map(item => (
+                  <div key={item.cartItemId || item.id} className="flex justify-between items-start text-sm">
+                    <div className="flex gap-3">
+                      <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 mt-0.5">{item.quantity}x</div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-900">{item.name}</span>
+                        {item.note && <span className="text-[11px] text-gray-500 mt-0.5 inline-flex items-center"><div className="w-1 h-1 bg-gray-400 rounded-full mr-1.5"></div>{item.note}</span>}
+                      </div>
+                    </div>
+                    <span className="font-medium text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Receipt dashed divider */}
+              <div className="w-full border-t-2 border-dashed border-gray-200 my-4"></div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Total Bayar</span>
+                <span className="text-2xl font-bold text-orange-600">{formatCurrency(total)}</span>
+              </div>
             </div>
+            
+            {/* Receipt jagged edge bottom */}
+            <div className="h-3 w-full" style={{ backgroundImage: 'radial-gradient(circle at 10px 10px, transparent 10px, white 11px)', backgroundSize: '20px 20px', backgroundRepeat: 'repeat-x', backgroundPosition: 'bottom' }}></div>
           </div>
+          
+          {/* Spacer for sticky bottom bar */}
+          <div className="h-8"></div>
 
-          <button type="submit" disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl font-bold hover:shadow-lg disabled:opacity-50 text-lg flex items-center justify-center">
-            {loading ? (
-              <><div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Memproses...</>
-            ) : (
-              <>Buat Pesanan · {formatCurrency(total)}</>
-            )}
-          </button>
+          {/* STICKY BOTTOM BAR */}
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-3xl bg-white border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex items-center gap-4">
+            <div className="flex-1">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Total Pembayaran</p>
+              <p className="text-xl font-bold text-gray-900 leading-none">{formatCurrency(total)}</p>
+            </div>
+            
+            <button type="submit" disabled={loading}
+              className="py-3.5 px-8 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 disabled:opacity-70 text-sm flex items-center justify-center min-w-[140px] shadow-lg shadow-orange-500/30 transition-all active:scale-95">
+              {loading ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Proses...</>
+              ) : (
+                <>Pesan Sekarang</>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>
