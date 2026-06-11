@@ -294,7 +294,7 @@ export default function Login() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/40 z-40"
-              onClick={() => navigate(-1)}
+              onClick={() => setShowLoginModal(false)}
             />
 
             {/* Bottom Sheet */}
@@ -317,7 +317,7 @@ export default function Login() {
                 <button
                   onClick={() => {
                     if (loginStep !== 'whatsapp') { setLoginStep('whatsapp'); return }
-                    navigate(-1)
+                    setShowLoginModal(false)
                   }}
                   className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                 >

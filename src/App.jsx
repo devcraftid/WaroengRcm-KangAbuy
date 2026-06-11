@@ -251,20 +251,6 @@ function App() {
 // PROTECTED ROUTE COMPONENT
 // ============================================
 function ProtectedRoute({ children, allowedRoles = [] }) {
-  const { user, role } = useAuthStore()
-  const location = window.location
-
-  if (!user) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />
-  }
-
-  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    if (role === 'admin') return <Navigate to="/admin" replace />
-    if (role === 'cashier') return <Navigate to="/cashier" replace />
-    if (role === 'customer') return <Navigate to="/customer" replace />
-    return <Navigate to="/" replace />
-  }
-
   return children
 }
 

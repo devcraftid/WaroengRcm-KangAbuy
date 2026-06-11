@@ -88,13 +88,13 @@ export default function CashierDashboard() {
   }
 
   const statCards = [
-    { title: 'Order Hari Ini', value: stats.todayOrders, icon: ShoppingBag, color: 'from-blue-500 to-blue-600', link: '/cashier/orders' },
-    { title: 'Revenue Hari Ini', value: formatCurrency(stats.todayRevenue), icon: DollarSign, color: 'from-green-500 to-emerald-600', link: '/cashier/history' },
-    { title: 'Pending', value: stats.pendingOrders, icon: Clock, color: 'from-yellow-500 to-orange-600', link: '/cashier/orders' },
-    { title: 'Processing', value: stats.processingOrders, icon: Activity, color: 'from-orange-500 to-red-600', link: '/cashier/orders' },
-    { title: 'Ready', value: stats.readyOrders, icon: TrendingUp, color: 'from-purple-500 to-pink-600', link: '/cashier/orders' },
-    { title: 'Cash', value: stats.cashPayments, icon: Banknote, color: 'from-teal-500 to-cyan-600', link: '/cashier/history' },
-    { title: 'QRIS', value: stats.qrisPayments, icon: CreditCard, color: 'from-indigo-500 to-blue-600', link: '/cashier/history' },
+    { title: 'Order Hari Ini', value: stats.todayOrders, icon: ShoppingBag, color: 'from-orange-400 to-orange-600', link: '/cashier/orders' },
+    { title: 'Revenue Hari Ini', value: formatCurrency(stats.todayRevenue), icon: DollarSign, color: 'from-emerald-400 to-emerald-600', link: '/cashier/history' },
+    { title: 'Pending', value: stats.pendingOrders, icon: Clock, color: 'from-amber-400 to-orange-500', link: '/cashier/orders' },
+    { title: 'Processing', value: stats.processingOrders, icon: Activity, color: 'from-orange-500 to-red-500', link: '/cashier/orders' },
+    { title: 'Ready', value: stats.readyOrders, icon: TrendingUp, color: 'from-rose-400 to-rose-600', link: '/cashier/orders' },
+    { title: 'Cash', value: stats.cashPayments, icon: Banknote, color: 'from-slate-600 to-slate-800', link: '/cashier/history' },
+    { title: 'QRIS', value: stats.qrisPayments, icon: CreditCard, color: 'from-blue-500 to-indigo-600', link: '/cashier/history' },
     { title: 'Meja Aktif', value: stats.activeTables, icon: Monitor, color: 'from-pink-500 to-rose-600', link: '/cashier/tables' }
   ]
 
@@ -126,31 +126,31 @@ export default function CashierDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Link
           to="/cashier/pos"
-          className="p-4 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-2xl hover:shadow-lg transition-all flex flex-col items-center justify-center"
+          className="p-5 bg-gradient-to-br from-[#f05a28] to-[#d44d1f] text-white rounded-2xl shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transition-all flex flex-col items-center justify-center transform hover:-translate-y-1"
         >
-          <ShoppingBag className="w-8 h-8 mb-2" />
-          <span className="text-sm font-semibold">POS</span>
+          <ShoppingBag className="w-8 h-8 mb-3 opacity-90" />
+          <span className="text-sm font-bold tracking-wide">Buka POS</span>
         </Link>
         <Link
           to="/cashier/tables"
-          className="p-4 bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition-all flex flex-col items-center justify-center"
+          className="p-5 bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all flex flex-col items-center justify-center group transform hover:-translate-y-1"
         >
-          <Monitor className="w-8 h-8 text-gray-600 mb-2" />
-          <span className="text-sm font-semibold text-gray-900">Meja</span>
+          <Monitor className="w-8 h-8 text-gray-400 group-hover:text-orange-500 transition-colors mb-3" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Meja</span>
         </Link>
         <Link
           to="/cashier/qr"
-          className="p-4 bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition-all flex flex-col items-center justify-center"
+          className="p-5 bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all flex flex-col items-center justify-center group transform hover:-translate-y-1"
         >
-          <QrCode className="w-8 h-8 text-gray-600 mb-2" />
-          <span className="text-sm font-semibold text-gray-900">QR</span>
+          <QrCode className="w-8 h-8 text-gray-400 group-hover:text-orange-500 transition-colors mb-3" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">QR Table</span>
         </Link>
         <Link
           to="/cashier/closing"
-          className="p-4 bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition-all flex flex-col items-center justify-center"
+          className="p-5 bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all flex flex-col items-center justify-center group transform hover:-translate-y-1"
         >
-          <DollarSign className="w-8 h-8 text-gray-600 mb-2" />
-          <span className="text-sm font-semibold text-gray-900">Closing</span>
+          <DollarSign className="w-8 h-8 text-gray-400 group-hover:text-orange-500 transition-colors mb-3" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Closing</span>
         </Link>
       </div>
 
@@ -166,11 +166,11 @@ export default function CashierDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">{stat.title}</p>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
                 </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5 text-white" />
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-sm`}>
+                  <stat.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
             </motion.div>

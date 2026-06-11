@@ -41,7 +41,9 @@ const useAuthStore = create(
           const cleanEmail = email.trim().toLowerCase()
           const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
           
-          if (!error && data?.user) {
+          if (error) throw error
+
+          if (data?.user) {
             let { data: prof } = await supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle()
             if (!prof) {
               await supabase.from('profiles').upsert({
@@ -52,14 +54,9 @@ const useAuthStore = create(
               prof = p
             }
             set({ user: data.user, session: data.session, profile: prof, role: prof?.role || 'customer', loading: false, error: null })
-            return { success: true, data }
+            return { success: true, message: 'Login berhasil!', data }
           }
 
-          const { data: prof } = await supabase.from('profiles').select('*').eq('email', cleanEmail).maybeSingle()
-          if (prof) {
-            set({ user: { id: prof.id, email: cleanEmail }, session: null, profile: prof, role: prof.role || 'customer', loading: false, error: null })
-            return { success: true, message: 'Login berhasil!' }
-          }
           throw new Error('Email atau password salah')
         } catch (error) {
           set({ loading: false, error: error.message })

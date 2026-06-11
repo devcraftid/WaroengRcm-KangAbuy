@@ -126,10 +126,10 @@ export default function POS() {
             </div>
           </div>
           {/* Categories - Horizontal Scroll */}
-          <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
-            <button onClick={() => setSelectedCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${selectedCategory === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>Semua</button>
+          <div className="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">
+            <button onClick={() => setSelectedCategory('all')} className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${selectedCategory === 'all' ? 'bg-[#f05a28] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Semua</button>
             {categories.map(cat => (
-              <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${selectedCategory === cat.id ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>{cat.name}</button>
+              <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${selectedCategory === cat.id ? 'bg-[#f05a28] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{cat.name}</button>
             ))}
           </div>
         </div>
@@ -139,13 +139,13 @@ export default function POS() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
             {filteredMenus.map(menu => (
               <button key={menu.id} onClick={() => addToCart(menu)}
-                className="bg-white rounded-xl p-2 sm:p-3 shadow-sm border hover:shadow-md transition-all text-left">
-                <div className="h-20 sm:h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center mb-2">
-                  {menu.image_url ? <img src={menu.image_url} alt="" className="w-full h-full object-cover rounded-lg" /> :
-                    <UtensilsCrossed className="w-6 h-6 text-orange-300" />}
+                className="bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-200 transition-all text-left flex flex-col transform hover:-translate-y-1">
+                <div className="h-24 sm:h-28 w-full bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl flex items-center justify-center mb-3 overflow-hidden relative">
+                  {menu.image_url ? <img src={menu.image_url} alt="" className="w-full h-full object-cover" /> :
+                    <UtensilsCrossed className="w-8 h-8 text-orange-200" />}
                 </div>
-                <p className="text-xs font-semibold truncate">{menu.name}</p>
-                <p className="text-xs text-orange-600 font-bold">{formatCurrency(menu.price)}</p>
+                <p className="text-xs font-bold text-gray-900 leading-tight mb-1 line-clamp-2 flex-1">{menu.name}</p>
+                <p className="text-sm text-[#f05a28] font-black">{formatCurrency(menu.price)}</p>
               </button>
             ))}
           </div>
@@ -154,17 +154,19 @@ export default function POS() {
 
       {/* Cart - Desktop */}
       <div className="hidden lg:flex w-80 flex-col bg-white border-l">
-        <div className="p-4 border-b">
-          <h3 className="font-bold flex items-center"><ShoppingCart className="w-4 h-4 mr-2" />Order Baru</h3>
-          <div className="flex space-x-1 mt-3">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="font-bold flex items-center text-gray-900"><ShoppingCart className="w-5 h-5 mr-2 text-[#f05a28]" />Order Baru</h3>
+          <div className="flex space-x-2 mt-4 bg-gray-100 p-1 rounded-xl">
             {['dine_in', 'takeaway_waiting', 'takeaway_pickup'].map(t => (
-              <button key={t} onClick={() => setOrderType(t)} className={`flex-1 py-1.5 rounded text-xs ${orderType === t ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>
+              <button key={t} onClick={() => setOrderType(t)} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${orderType === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                 {t === 'dine_in' ? 'Dine In' : t === 'takeaway_waiting' ? 'Waiting' : 'Pickup'}
               </button>
             ))}
           </div>
           {orderType === 'dine_in' && (
-            <input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="No. Meja" className="w-full mt-2 px-3 py-1.5 rounded-lg border text-sm" />
+            <div className="mt-3">
+              <input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="Masukkan Nomor Meja" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#f05a28]/20 focus:border-[#f05a28] outline-none transition-all bg-white" />
+            </div>
           )}
         </div>
         <div className="flex-1 overflow-y-auto p-4">
@@ -183,10 +185,19 @@ export default function POS() {
             </div>
           ))}
         </div>
-        <div className="p-4 border-t">
-          <div className="flex justify-between mb-3"><span>Total</span><span className="text-xl font-bold text-orange-600">{formatCurrency(total)}</span></div>
-          <button onClick={() => { setPaymentMethod('cash'); handleCheckout() }} className="w-full py-2 bg-green-500 text-white rounded-lg text-sm mb-2">💵 Cash</button>
-          <button onClick={() => { setPaymentMethod('qris'); handleCheckout() }} className="w-full py-2 bg-blue-500 text-white rounded-lg text-sm">📱 QRIS</button>
+        <div className="p-5 border-t border-gray-100 bg-white">
+          <div className="flex justify-between items-center mb-4">
+            <span className="font-semibold text-gray-500">Total Tagihan</span>
+            <span className="text-2xl font-black text-[#f05a28]">{formatCurrency(total)}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => { setPaymentMethod('cash'); handleCheckout() }} className="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center">
+              <Banknote className="w-4 h-4 mr-2 opacity-80" /> Cash
+            </button>
+            <button onClick={() => { setPaymentMethod('qris'); handleCheckout() }} className="w-full py-3 bg-gradient-to-br from-[#f05a28] to-[#d44d1f] text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center">
+              <QrCode className="w-4 h-4 mr-2 opacity-80" /> QRIS
+            </button>
+          </div>
         </div>
       </div>
 

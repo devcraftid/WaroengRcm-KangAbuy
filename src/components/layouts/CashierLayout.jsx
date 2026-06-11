@@ -69,14 +69,15 @@ export default function CashierLayout() {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
           <Link to="/cashier" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-              <Store className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                 style={{ background: 'linear-gradient(135deg, #f05a28, #d44d1f)' }}>
+              <Store className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-sm font-bold text-gray-900">WAROENG RCM</span>
-              <span className="text-xs text-gray-500 block">Kasir Panel</span>
+              <span className="text-sm font-bold text-gray-900 leading-tight block">WAROENG RCM</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: '#f05a28' }}>Kasir Panel</span>
             </div>
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100">
@@ -85,37 +86,42 @@ export default function CashierLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-3 py-3 rounded-xl mb-1 transition-all duration-200 ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'text-white shadow-lg'
+                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                 }`}
+                style={isActive ? {
+                  background: 'linear-gradient(135deg, #f05a28, #d44d1f)',
+                  boxShadow: '0 8px 16px rgba(240, 90, 40, 0.25)'
+                } : {}}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-medium">{item.label}</span>
+                <item.icon className={`w-5 h-5 flex-shrink-0 transition-transform ${isActive ? '' : 'group-hover:scale-110'}`} />
+                <span className="text-sm font-semibold">{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
         {/* User Info */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold">
-              {profile?.full_name?.[0] || 'K'}
+        <div className="p-5 border-t border-gray-100">
+          <div className="flex items-center space-x-3 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold"
+                 style={{ background: 'linear-gradient(135deg, #f05a28, #d44d1f)' }}>
+              {profile?.full_name?.[0]?.toUpperCase() || 'K'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-bold text-gray-900 truncate">
                 {profile?.full_name || 'Kasir'}
               </p>
-              <p className="text-xs text-gray-500">Cashier</p>
+              <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Cashier</p>
             </div>
             <button
               onClick={handleSignOut}
@@ -163,7 +169,7 @@ export default function CashierLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main className="flex-1 overflow-y-auto bg-gray-50/50">
           <Outlet />
         </main>
       </div>

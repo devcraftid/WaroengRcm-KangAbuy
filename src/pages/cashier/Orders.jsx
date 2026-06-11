@@ -28,7 +28,7 @@ export default function CashierOrders() {
       // Ambil order dengan payment
       const { data, error } = await supabase
         .from('orders')
-        .select('*, customer:profiles!customer_id(full_name, phone)')
+        .select('*, customer:profiles!customer_id(full_name)')
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -180,10 +180,10 @@ export default function CashierOrders() {
           <p className="text-xs text-gray-500">{filteredOrders.length} order</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link to="/cashier/payment" className="px-3 py-2 bg-green-500 text-white rounded-xl text-xs font-medium hover:bg-green-600 flex items-center">
-            <CreditCard className="w-4 h-4 mr-1" />Pembayaran
+          <Link to="/cashier/payment" className="px-4 py-2 bg-gradient-to-r from-[#f05a28] to-[#d44d1f] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all flex items-center">
+            <CreditCard className="w-4 h-4 mr-1.5" />Pembayaran
           </Link>
-          <button onClick={loadOrders} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200">
+          <button onClick={loadOrders} className="p-2 rounded-xl bg-white border border-gray-100 hover:border-orange-200 text-gray-500 hover:text-orange-500 hover:shadow-sm transition-all">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
@@ -194,12 +194,12 @@ export default function CashierOrders() {
         {statusTabs.map(tab => {
           const count = tab.id === 'all' ? orders.length : orders.filter(o => o.status === tab.id).length
           return (
-            <button key={tab.id} onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 ${
-                statusFilter === tab.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
-              }`}>
-              {tab.label} ({count})
-            </button>
+              <button key={tab.id} onClick={() => setStatusFilter(tab.id)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-colors ${
+                  statusFilter === tab.id ? 'bg-[#f05a28] text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
+                }`}>
+                {tab.label} ({count})
+              </button>
           )
         })}
       </div>
@@ -227,13 +227,13 @@ export default function CashierOrders() {
             const PayIcon = payInfo.icon
             
             return (
-              <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className={`bg-white rounded-xl shadow-sm border p-3 sm:p-4 ${
-                  order.status === 'pending' ? 'border-l-4 border-l-yellow-500' :
-                  order.status === 'ready' ? 'border-l-4 border-l-green-500' :
-                  order.status === 'processing' ? 'border-l-4 border-l-blue-500' :
-                  order.status === 'completed' ? 'border-l-4 border-l-green-600' :
-                  'border-gray-100'
+              <motion.div key={order.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 p-4 sm:p-5 relative overflow-hidden group ${
+                  order.status === 'pending' ? 'border-l-4 border-l-amber-400' :
+                  order.status === 'ready' ? 'border-l-4 border-l-emerald-400' :
+                  order.status === 'processing' ? 'border-l-4 border-l-orange-400' :
+                  order.status === 'completed' ? 'border-l-4 border-l-emerald-500' :
+                  'border-l-4 border-l-gray-300'
                 }`}>
                 
                 {/* Mobile View */}
@@ -255,32 +255,32 @@ export default function CashierOrders() {
                         <PayIcon className="w-2.5 h-2.5 mr-0.5" />{payInfo.label}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <button onClick={() => handleViewDetail(order)} className="p-1.5 rounded bg-blue-50 text-blue-600"><Eye className="w-3 h-3" /></button>
-                      <button onClick={() => handlePrint(order)} className="p-1.5 rounded bg-gray-50 text-gray-600"><Printer className="w-3 h-3" /></button>
+                    <div className="flex items-center space-x-2">
+                      <button onClick={() => handleViewDetail(order)} className="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100"><Eye className="w-4 h-4" /></button>
+                      <button onClick={() => handlePrint(order)} className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"><Printer className="w-4 h-4" /></button>
                     </div>
                   </div>
                   {/* Action Buttons - HANYA JIKA SUDAH LUNAS */}
                   {payInfo.label === 'Lunas' && (
-                    <div className="flex space-x-1 mt-2">
+                    <div className="flex space-x-2 mt-3">
                       {order.status === 'pending' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'processing')} className="flex-1 py-1.5 bg-blue-500 text-white rounded text-xs">Proses</button>
+                        <button onClick={() => updateOrderStatus(order.id, 'processing')} className="flex-1 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold rounded-xl text-xs transition-colors">Masak/Proses</button>
                       )}
                       {order.status === 'processing' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'ready')} className="flex-1 py-1.5 bg-green-500 text-white rounded text-xs">Siap</button>
+                        <button onClick={() => updateOrderStatus(order.id, 'ready')} className="flex-1 py-2 bg-[#f05a28] text-white hover:bg-[#d44d1f] font-bold rounded-xl text-xs shadow-sm transition-colors">Pesanan Siap</button>
                       )}
                       {order.status === 'ready' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'completed')} className="flex-1 py-1.5 bg-purple-500 text-white rounded text-xs">Selesai</button>
+                        <button onClick={() => updateOrderStatus(order.id, 'completed')} className="flex-1 py-2 bg-emerald-500 text-white hover:bg-emerald-600 font-bold rounded-xl text-xs shadow-sm transition-colors">Selesai</button>
                       )}
                     </div>
                   )}
                   {/* Jika belum lunas, tampilkan tombol bayar */}
                   {payInfo.label !== 'Lunas' && order.status === 'pending' && (
-                    <div className="flex space-x-1 mt-2">
-                      <Link to={`/cashier/payment/${order.id}`} className="flex-1 py-1.5 bg-orange-500 text-white rounded text-xs text-center">
+                    <div className="flex space-x-2 mt-3">
+                      <Link to={`/cashier/payment/${order.id}`} className="flex-1 py-2 bg-gradient-to-r from-[#f05a28] to-[#d44d1f] text-white rounded-xl text-xs font-bold text-center shadow-sm">
                         💰 Bayar
                       </Link>
-                      <button onClick={() => updateOrderStatus(order.id, 'cancelled')} className="flex-1 py-1.5 bg-red-100 text-red-600 rounded text-xs">Batal</button>
+                      <button onClick={() => updateOrderStatus(order.id, 'cancelled')} className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition-colors">Batalkan</button>
                     </div>
                   )}
                 </div>
@@ -300,21 +300,21 @@ export default function CashierOrders() {
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">{order.customer?.full_name || 'Guest'}</span>
-                    <button onClick={() => handleViewDetail(order)} className="p-1.5 rounded bg-blue-50 text-blue-600"><Eye className="w-4 h-4" /></button>
-                    <button onClick={() => handlePrint(order)} className="p-1.5 rounded bg-gray-50 text-gray-600"><Printer className="w-4 h-4" /></button>
+                    <span className="text-sm font-semibold text-gray-700 mr-2">{order.customer?.full_name || 'Guest'}</span>
+                    <button onClick={() => handleViewDetail(order)} className="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"><Eye className="w-4 h-4" /></button>
+                    <button onClick={() => handlePrint(order)} className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"><Printer className="w-4 h-4" /></button>
                     
                     {/* HANYA jika LUNAS */}
                     {payInfo.label === 'Lunas' && (
                       <>
                         {order.status === 'pending' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'processing')} className="px-3 py-1.5 bg-blue-500 text-white rounded text-xs">Proses</button>
+                          <button onClick={() => updateOrderStatus(order.id, 'processing')} className="px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold rounded-xl text-xs ml-2 transition-colors">Masak/Proses</button>
                         )}
                         {order.status === 'processing' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'ready')} className="px-3 py-1.5 bg-green-500 text-white rounded text-xs">Siap</button>
+                          <button onClick={() => updateOrderStatus(order.id, 'ready')} className="px-4 py-2 bg-[#f05a28] text-white hover:bg-[#d44d1f] font-bold rounded-xl text-xs ml-2 shadow-sm transition-colors">Pesanan Siap</button>
                         )}
                         {order.status === 'ready' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'completed')} className="px-3 py-1.5 bg-purple-500 text-white rounded text-xs">Selesai</button>
+                          <button onClick={() => updateOrderStatus(order.id, 'completed')} className="px-4 py-2 bg-emerald-500 text-white hover:bg-emerald-600 font-bold rounded-xl text-xs ml-2 shadow-sm transition-colors">Selesai</button>
                         )}
                       </>
                     )}
@@ -322,8 +322,8 @@ export default function CashierOrders() {
                     {/* Jika BELUM LUNAS */}
                     {payInfo.label !== 'Lunas' && order.status === 'pending' && (
                       <>
-                        <Link to={`/cashier/payment/${order.id}`} className="px-3 py-1.5 bg-orange-500 text-white rounded text-xs">💰 Bayar</Link>
-                        <button onClick={() => updateOrderStatus(order.id, 'cancelled')} className="px-3 py-1.5 bg-red-100 text-red-600 rounded text-xs">Batal</button>
+                        <Link to={`/cashier/payment/${order.id}`} className="px-4 py-2 bg-gradient-to-r from-[#f05a28] to-[#d44d1f] text-white rounded-xl text-xs font-bold ml-2 shadow-sm">💰 Bayar</Link>
+                        <button onClick={() => updateOrderStatus(order.id, 'cancelled')} className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-xs ml-2 transition-colors">Batalkan</button>
                       </>
                     )}
                   </div>
