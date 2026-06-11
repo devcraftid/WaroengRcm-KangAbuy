@@ -24,13 +24,13 @@ export default function GuestLayout() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* ─── App Content terpusat ─── */}
-      <div className="app-wrapper">
+      <div className="app-wrapper" style={{ position: 'relative' }}>
 
         {/* ─── HEADER ─── */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
           <div className="flex items-center justify-between h-14 px-4">
 
-            {/* Logo / Back */}
+            {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                    style={{ background: '#f05a28' }}>
@@ -42,7 +42,7 @@ export default function GuestLayout() {
               </div>
             </Link>
 
-            {/* Right: Cart + Menu toggle */}
+            {/* Right: Cart + Masuk + Menu */}
             <div className="flex items-center gap-1">
               {/* Cart */}
               <Link to="/cart" className="relative p-2 rounded-full hover:bg-gray-50 transition-colors">
@@ -62,18 +62,17 @@ export default function GuestLayout() {
                 </AnimatePresence>
               </Link>
 
-              {/* Login */}
-              {!user && (
+              {/* Masuk / Dashboard */}
+              {!user ? (
                 <Link to="/login"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
                   style={{ background: '#f05a28' }}>
                   <LogIn className="w-3.5 h-3.5" />
                   Masuk
                 </Link>
-              )}
-              {user && (
+              ) : (
                 <Link to="/customer"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
                              bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                   <User className="w-3.5 h-3.5" />
                   Dashboard
@@ -94,6 +93,7 @@ export default function GuestLayout() {
           <Outlet />
         </main>
       </div>
+
 
       {/* ─── MOBILE MENU ─── */}
       <AnimatePresence>

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, UtensilsCrossed, Star, Heart, Plus, Minus, X, ChevronDown, ShoppingCart } from 'lucide-react'
+import {
+  Search, UtensilsCrossed, Star, Heart, Plus, Minus, X,
+  ShoppingCart, ChevronUp, Expand
+} from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/format'
 import useCartStore from '../../stores/cartStore'
@@ -19,8 +22,13 @@ export default function Menu() {
   const [showSearch, setShowSearch] = useState(false)
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState([])
-  const [quantities, setQuantities] = useState({}) // menuId -> qty dari cart
-  const catRef = useRef(null)
+  const [quantities, setQuantities] = useState({})
+
+  // Modal state
+  const [activeMenu, setActiveMenu] = useState(null)   // menu object yang sedang di-view
+  const [modalQty, setModalQty] = useState(1)
+  const [expandModal, setExpandModal] = useState(false)
+
   const { items, addItem, updateQuantity, removeItem, getTotal, getItemCount } = useCartStore()
   const { user } = useAuthStore()
 
@@ -78,15 +86,47 @@ export default function Menu() {
     localStorage.setItem(`favorites_${user.id}`, JSON.stringify(newFavs))
   }
 
-  const handleAdd = (menu) => {
-    addItem({ id: menu.id, name: menu.name, price: menu.price, image_url: menu.image_url, description: menu.description })
-    toast.success(`${menu.name} ditambahkan`)
+  // Buka modal detail menu
+  const openAddModal = (menu) => {
+    setActiveMenu(menu)
+    setModalQty(quantities[menu.id] || 1) // reset qty atau pakai qty yang sudah ada
+    setExpandModal(false)
+  }
+
+  const closeModal = () => {
+    setActiveMenu(null)
+    setExpandModal(false)
+  }
+
+  // Konfirmasi tambah dari modal
+  const handleConfirmAdd = () => {
+    if (!activeMenu) return
+    const existing = items.find(i => i.id === activeMenu.id)
+    if (existing) {
+      updateQuantity(activeMenu.id, modalQty)
+    } else {
+      for (let i = 0; i < modalQty; i++) {
+        addItem({
+          id: activeMenu.id,
+          name: activeMenu.name,
+          price: activeMenu.price,
+          image_url: activeMenu.image_url,
+          description: activeMenu.description,
+        })
+      }
+      // Kalau qty > 1 update langsung karena addItem hanya +1
+      if (modalQty > 1) {
+        setTimeout(() => updateQuantity(activeMenu.id, modalQty), 50)
+      }
+    }
+    toast.success(`${activeMenu.name} ditambahkan ke pesanan`)
+    closeModal()
   }
 
   const handleIncrease = (menu) => {
     const item = items.find(i => i.id === menu.id)
     if (item) updateQuantity(menu.id, item.quantity + 1)
-    else handleAdd(menu)
+    else addItem({ id: menu.id, name: menu.name, price: menu.price, image_url: menu.image_url, description: menu.description })
   }
 
   const handleDecrease = (menu) => {
@@ -114,7 +154,7 @@ export default function Menu() {
   const totalPrice = getTotal()
 
   return (
-    <div className="min-h-screen bg-white" style={{ paddingBottom: totalQty > 0 ? 80 : 16 }}>
+    <div className="min-h-screen bg-white relative" style={{ paddingBottom: totalQty > 0 ? 60 : 16 }}>
 
       {/* ─── STICKY CATEGORY HEADER ─── */}
       <div className="sticky top-14 z-30 bg-white" style={{ boxShadow: '0 1px 0 #f0f0f0' }}>
@@ -148,13 +188,10 @@ export default function Menu() {
 
         {/* Category tabs row */}
         <div className="flex items-stretch border-b border-gray-100">
-          {/* HEAD MENU label */}
           <div className="flex items-center gap-1 px-3 py-2.5 text-xs font-bold border-r border-gray-100 flex-shrink-0"
             style={{ color: PRIMARY }}>
             KATEGORI
           </div>
-
-          {/* Scrollable tabs */}
           <div className="flex items-stretch overflow-x-auto hide-scrollbar flex-1 px-1">
             <button
               onClick={() => setSelectedCategory('all')}
@@ -170,8 +207,6 @@ export default function Menu() {
               </button>
             ))}
           </div>
-
-          {/* Search */}
           <button onClick={() => setShowSearch(!showSearch)}
             className={`p-3 flex-shrink-0 transition-colors ${showSearch ? 'text-orange-500' : 'text-gray-400 hover:text-gray-600'}`}>
             <Search className="w-4 h-4" />
@@ -182,7 +217,6 @@ export default function Menu() {
       {/* ─── MENU CONTENT ─── */}
       <div className="px-3 pt-4">
         {loading ? (
-          // Skeleton
           <div className="grid grid-cols-2 gap-3">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
@@ -199,15 +233,12 @@ export default function Menu() {
           <div className="space-y-6">
             {Object.entries(groupedMenus).map(([categoryName, categoryMenus]) => (
               <div key={categoryName}>
-                {/* Category header */}
                 {categoryName && (
                   <div className="mb-3 pb-2 border-b border-gray-100">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">PAKET</p>
                     <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{categoryName}</p>
                   </div>
                 )}
-
-                {/* 2-column grid */}
                 <div className="grid grid-cols-2 gap-3">
                   {categoryMenus.map((menu, index) => (
                     <MenuCard
@@ -217,7 +248,7 @@ export default function Menu() {
                       quantity={quantities[menu.id] || 0}
                       isFavorite={favorites.includes(menu.id)}
                       onToggleFavorite={() => toggleFavorite(menu.id)}
-                      onAdd={() => handleAdd(menu)}
+                      onOpenModal={() => openAddModal(menu)}
                       onIncrease={() => handleIncrease(menu)}
                       onDecrease={() => handleDecrease(menu)}
                     />
@@ -240,22 +271,15 @@ export default function Menu() {
         )}
       </div>
 
-      {/* ─── CHECKOUT BAR (ESB Style) ─── */}
+      {/* ─── CHECKOUT BAR ─── */}
       <AnimatePresence>
         {totalQty > 0 && (
           <motion.div
-            initial={{ y: 100, x: '-50%', opacity: 0 }} 
-            animate={{ y: 0, x: '-50%', opacity: 1 }} 
-            exit={{ y: 100, x: '-50%', opacity: 0 }}
-            className="checkout-bar safe-bottom pb-2 pt-2 px-3 mx-auto"
-            style={{ 
-              borderRadius: '8px 8px 0 0',
-              maxWidth: '480px',
-              width: '100%',
-              bottom: 0,
-            }}
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="checkout-bar"
           >
-            {/* Cart icon + badge */}
             <div className="relative flex-shrink-0 bg-white/20 p-2 rounded-xl">
               <ShoppingCart className="w-5 h-5 text-white" />
               <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white flex items-center justify-center
@@ -263,14 +287,10 @@ export default function Menu() {
                 {totalQty > 9 ? '9+' : totalQty}
               </span>
             </div>
-
-            {/* Info */}
             <div className="flex-1 min-w-0 pl-1">
               <p className="text-[11px] text-white/90 font-medium">Total Harga</p>
               <p className="text-sm font-bold text-white">{formatCurrency(totalPrice)}</p>
             </div>
-
-            {/* CTA */}
             <Link to="/cart"
               className="flex-shrink-0 px-4 py-2 bg-white rounded-lg text-xs font-bold shadow-sm"
               style={{ color: PRIMARY }}>
@@ -279,14 +299,172 @@ export default function Menu() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ─── ADD MENU BOTTOM SHEET MODAL (ESB Style) ─── */}
+      <AnimatePresence>
+        {activeMenu && (
+          <>
+            {/* Overlay — absolute, terkurung dalam container */}
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/50 z-40"
+              style={{ top: 0 }}
+              onClick={closeModal}
+            />
+
+            {/* Bottom Sheet — absolute, muncul dari bawah container */}
+            <motion.div
+              key="modal"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 z-50 bg-white flex flex-col"
+              style={{
+                borderRadius: '20px 20px 0 0',
+                maxHeight: expandModal ? '85vh' : '75vh',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Foto Menu — area klik untuk tutup */}
+              <div
+                className="relative flex-shrink-0 overflow-hidden bg-gray-100"
+                style={{ height: expandModal ? 260 : 200 }}
+              >
+                {activeMenu.image_url ? (
+                  <img
+                    src={activeMenu.image_url}
+                    alt={activeMenu.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #fff5f2, #fde8dc)' }}>
+                    <UtensilsCrossed className="w-16 h-16 text-orange-200" />
+                  </div>
+                )}
+
+                {/* Tombol Tutup (X) — kanan atas */}
+                <button
+                  onClick={closeModal}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-700" />
+                </button>
+
+                {/* Tombol Expand — kanan bawah */}
+                <button
+                  onClick={() => setExpandModal(!expandModal)}
+                  className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors"
+                >
+                  <ChevronUp className={`w-4 h-4 text-gray-600 transition-transform ${expandModal ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Badge Best Seller */}
+                {activeMenu.is_best_seller && (
+                  <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold text-white shadow"
+                    style={{ background: PRIMARY }}>
+                    <Star className="w-3 h-3 fill-current" /> Best Seller
+                  </span>
+                )}
+              </div>
+
+              {/* Detail Konten — scrollable */}
+              <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
+                {/* Nama & Harga */}
+                <h2 className="text-base font-bold text-gray-900 leading-snug uppercase tracking-wide">
+                  {activeMenu.name}
+                </h2>
+                <p className="text-lg font-bold mt-1" style={{ color: PRIMARY }}>
+                  {formatCurrency(activeMenu.price)}
+                </p>
+
+                {/* Deskripsi */}
+                {activeMenu.description && (
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                    {activeMenu.description}
+                  </p>
+                )}
+
+                {/* Kategori info */}
+                {activeMenu.categories?.name && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Kategori
+                    </p>
+                    <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
+                      {activeMenu.categories.name}
+                    </span>
+                  </div>
+                )}
+
+                {/* Catatan */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</p>
+                  <input
+                    type="text"
+                    placeholder="Tambahkan catatan (opsional)..."
+                    className="w-full text-sm px-3 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-50 bg-gray-50 placeholder-gray-400"
+                  />
+                </div>
+
+                {/* Spacer supaya konten tidak ketutup sticky footer */}
+                <div className="h-4" />
+              </div>
+
+              {/* ─── Sticky Footer: Qty + Add Button ─── */}
+              <div className="flex-shrink-0 px-5 py-4 bg-white border-t border-gray-100"
+                style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
+                <div className="flex items-center gap-4">
+                  {/* Label & Qty Stepper */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Jumlah</span>
+                    <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setModalQty(q => Math.max(1, q - 1))}
+                        disabled={modalQty <= 1}
+                        className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-9 text-center text-sm font-bold text-gray-900">{modalQty}</span>
+                      <button
+                        onClick={() => setModalQty(q => q + 1)}
+                        className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        style={{ color: PRIMARY }}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tombol Tambah Pesanan */}
+                  <button
+                    onClick={handleConfirmAdd}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold text-white flex items-center justify-between px-4 transition-all active:scale-[0.98]"
+                    style={{ background: `linear-gradient(135deg, ${PRIMARY}, #d44d1f)` }}
+                  >
+                    <span>Tambah Pesanan</span>
+                    <span className="font-bold">{formatCurrency(activeMenu.price * modalQty)}</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-/* ────────────────────────────────── */
-/* MENU CARD — ESB Order Style        */
-/* ────────────────────────────────── */
-function MenuCard({ menu, index, quantity, isFavorite, onToggleFavorite, onAdd, onIncrease, onDecrease }) {
+/* ──────────────────────────────────────── */
+/* MENU CARD — ESB Order Style             */
+/* ──────────────────────────────────────── */
+function MenuCard({ menu, index, quantity, isFavorite, onToggleFavorite, onOpenModal, onIncrease, onDecrease }) {
   return (
     <motion.div
       id={`menu-${menu.id}`}
@@ -295,18 +473,22 @@ function MenuCard({ menu, index, quantity, isFavorite, onToggleFavorite, onAdd, 
       transition={{ delay: index * 0.03, duration: 0.3 }}
       className="menu-card flex flex-col"
     >
-      {/* Image */}
-      <div className="relative bg-gray-100 overflow-hidden" style={{ aspectRatio: '4/3' }}>
+      {/* Image — klik buka modal */}
+      <div
+        className="relative bg-gray-100 overflow-hidden cursor-pointer"
+        style={{ aspectRatio: '4/3' }}
+        onClick={onOpenModal}
+      >
         {menu.image_url ? (
           <img src={menu.image_url} alt={menu.name}
-            className="w-full h-full object-cover" loading="lazy" />
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <UtensilsCrossed className="w-8 h-8 text-gray-300" />
           </div>
         )}
 
-        {/* Badges */}
+        {/* Best Seller Badge */}
         {menu.is_best_seller && (
           <span className="absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full
                            text-[10px] font-bold text-white"
@@ -325,17 +507,25 @@ function MenuCard({ menu, index, quantity, isFavorite, onToggleFavorite, onAdd, 
 
       {/* Content */}
       <div className="p-2.5 flex flex-col flex-1">
-        <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 mb-0.5 leading-snug flex-1">
+        <h3
+          className="text-xs font-semibold text-gray-900 line-clamp-2 mb-0.5 leading-snug flex-1 cursor-pointer hover:text-orange-600 transition-colors"
+          onClick={onOpenModal}
+        >
           {menu.name}
         </h3>
         <p className="text-xs text-gray-500 mb-2 font-medium">{formatCurrency(menu.price)}</p>
 
         {/* Add / Quantity control */}
         {quantity === 0 ? (
-          <button onClick={onAdd} className="btn-add text-sm py-1.5">
+          /* Tombol Add → buka modal */
+          <button
+            onClick={onOpenModal}
+            className="btn-add text-sm py-1.5"
+          >
             Add
           </button>
         ) : (
+          /* Qty counter inline (tanpa modal) */
           <div className="qty-counter">
             <button onClick={onDecrease} className="qty-btn">
               <Minus className="w-3.5 h-3.5" />

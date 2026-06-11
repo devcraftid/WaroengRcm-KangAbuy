@@ -24,10 +24,30 @@
 /* DESIGN TOKEN: App terpusat seperti ESB Order                      */
 /* ================================================================ */
 .app-wrapper {
-  /* Pusatkan konten di desktop, max 430px seperti ESB */
+  /* Pusatkan konten di desktop, max 480px seperti ESB */
   @apply relative min-h-screen bg-white mx-auto;
   max-width: 480px;
   box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.10);
+  /* Kunci semua fixed/absolute children di dalam container */
+  isolation: isolate;
+}
+
+/* Overlay + modal yang terkurung dalam .app-wrapper */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 40;
+}
+.modal-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
 }
 
 /* ================================================================ */
@@ -119,10 +139,8 @@
 
   /* ── Checkout Bar ── */
   .checkout-bar {
-    @apply fixed bottom-0 left-1/2 -translate-x-1/2 z-50 flex items-center
-           gap-3 px-4 py-3 rounded-none;
-    width: 100%;
-    max-width: 480px;
+    @apply absolute bottom-0 left-0 right-0 z-50 flex items-center
+           gap-3 px-4 py-3;
     background: #f05a28;
   }
 

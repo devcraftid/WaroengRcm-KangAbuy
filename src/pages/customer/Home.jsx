@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   UtensilsCrossed, Star, MapPin, Phone, Clock, Instagram,
   MessageCircle, ShoppingBag, Sparkles, ChevronRight,
@@ -11,9 +11,32 @@ import { formatCurrency } from '../../utils/format'
 
 const PRIMARY = '#f05a28'
 
+// Gambar banner lokal dari public/img/
+const LOCAL_BANNERS = [
+  '/img/banner1.png',
+  '/img/banner2.png',
+  '/img/banner3.png',
+]
+
+// Info restoran default (fallback jika belum diset di CMS)
+const DEFAULT_INFO = {
+  restaurant_name: 'Waroeng RCM Kang Abuy',
+  tagline: 'Aneka Nasi, Ayam & Bebek — Makanan Enak, Harga Ekonomis',
+  address: 'Jl. Raya Cisauk Lapan Bunderan Avani No.21, Sampora, Kec. Cisauk, Kab. Tangerang, Banten 15345',
+  whatsapp_number: '082110011010',
+  operating_hours: 'Senin–Sabtu: 10.00–22.00 | Minggu: Tutup',
+  gofood_url: 'https://gofood.co.id/jakarta/restaurant/waroeng-rcm-kang-abuy-b9ada0f0-93a9-448a-997d-14a56bc904db',
+}
+
 const fadeUp = {
   hidden:  { opacity: 0, y: 16 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.08 } }),
+}
+
+const bannerVariants = {
+  enter: { opacity: 0, scale: 1.04 },
+  center: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
+  exit: { opacity: 0, scale: 0.98, transition: { duration: 0.4, ease: 'easeIn' } },
 }
 
 export default function Home() {
@@ -22,6 +45,16 @@ export default function Home() {
   const [categories, setCategories]  = useState([])
   const [promotions, setPromotions]  = useState([])
   const [loading, setLoading]        = useState(true)
+  const [bannerIndex, setBannerIndex] = useState(0)
+
+  // Auto-slide banner setiap 4 detik (hanya jika tidak ada banner_url dari settings)
+  useEffect(() => {
+    if (settings?.banner_url) return
+    const interval = setInterval(() => {
+      setBannerIndex(prev => (prev + 1) % LOCAL_BANNERS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [settings?.banner_url])
 
   useEffect(() => { loadHomeData() }, [])
 
@@ -38,7 +71,7 @@ export default function Home() {
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('promotions').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
       ])
-      setSettings(settingsData || { restaurant_name: 'Waroeng RCM Kang Abuy', tagline: 'Makanan Enak, Harga Ekonomis' })
+      setSettings(settingsData || DEFAULT_INFO)
       setBestSellers(bestSellersData || [])
       setCategories(categoriesData || [])
       const now = new Date()
@@ -50,7 +83,7 @@ export default function Home() {
       }))
     } catch (err) {
       console.error(err)
-      setSettings({ restaurant_name: 'Waroeng RCM Kang Abuy', tagline: 'Makanan Enak, Harga Ekonomis' })
+      setSettings(DEFAULT_INFO)
     } finally {
       setLoading(false)
     }
@@ -74,17 +107,41 @@ export default function Home() {
       {/* HERO — gambar restoran (ESB style) */}
       {/* ════════════════════════════════ */}
       <section className="relative">
-        {/* Banner */}
-        <div className="relative w-full overflow-hidden" style={{ height: 200, background: 'linear-gradient(135deg, #fff5f2 0%, #fde8dc 50%, #ffd5c0 100%)' }}>
+        {/* Banner Slider */}
+        <div className="relative w-full overflow-hidden" style={{ height: 200 }}>
           {settings?.banner_url ? (
+            /* Prioritas: gambar dari Supabase settings */
             <img src={settings.banner_url} alt="Banner" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: PRIMARY }}>
-                <UtensilsCrossed className="w-8 h-8 text-white" />
+            /* Slider dari gambar lokal public/img/ */
+            <>
+              <AnimatePresence mode="sync">
+                <motion.img
+                  key={bannerIndex}
+                  src={LOCAL_BANNERS[bannerIndex]}
+                  alt={`Banner ${bannerIndex + 1}`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  variants={bannerVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                />
+              </AnimatePresence>
+
+              {/* Gradient overlay bawah untuk readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+
+              {/* Dot indicators */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {LOCAL_BANNERS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setBannerIndex(i)}
+                    className={`rounded-full transition-all duration-300 ${i === bannerIndex ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                  />
+                ))}
               </div>
-              <p className="text-sm font-bold" style={{ color: PRIMARY }}>Waroeng RCM Kang Abuy</p>
-            </div>
+            </>
           )}
         </div>
 
@@ -98,20 +155,19 @@ export default function Home() {
             )}
             <div className="flex-1 min-w-0">
               <h1 className="font-bold text-gray-900 text-base leading-snug">
-                {settings?.restaurant_name || 'Waroeng RCM Kang Abuy'}
+                {settings?.restaurant_name || DEFAULT_INFO.restaurant_name}
               </h1>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                <p className="text-xs text-gray-500">
-                  {settings?.operating_hours || 'Buka setiap hari'}
-                </p>
+                {/* Indikator buka/tutup: Minggu = merah, lainnya = hijau */}
+                {new Date().getDay() === 0
+                  ? <><span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /><p className="text-xs text-red-500">Tutup hari ini</p></>
+                  : <><span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /><p className="text-xs text-gray-500">{settings?.operating_hours || DEFAULT_INFO.operating_hours}</p></>
+                }
               </div>
-              {settings?.address && (
-                <div className="flex items-start gap-1 mt-1.5">
-                  <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: PRIMARY }} />
-                  <p className="text-xs text-gray-400 line-clamp-1">{settings.address}</p>
-                </div>
-              )}
+              <div className="flex items-start gap-1 mt-1.5">
+                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: PRIMARY }} />
+                <p className="text-xs text-gray-400 line-clamp-1">{settings?.address || DEFAULT_INFO.address}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -285,34 +341,35 @@ export default function Home() {
             <UtensilsCrossed className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm">{settings?.restaurant_name || 'WAROENG RCM'}</p>
+            <p className="font-bold text-sm">{settings?.restaurant_name || DEFAULT_INFO.restaurant_name}</p>
             <p className="text-[11px] text-gray-400">Kang Abuy</p>
           </div>
         </div>
         <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-          {settings?.tagline || 'Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer'}
+          {settings?.tagline || DEFAULT_INFO.tagline}
         </p>
-        <div className="space-y-2">
-          {settings?.address && (
-            <div className="flex items-start gap-2 text-xs text-gray-400">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-px" style={{ color: PRIMARY }} />
-              <span>{settings.address}</span>
-            </div>
-          )}
-          {settings?.whatsapp_number && (
-            <a href={`https://wa.me/${settings.whatsapp_number?.replace(/^0/, '62').replace(/^\+/, '')}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-              <Phone className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-              <span>{settings.whatsapp_number}</span>
-            </a>
-          )}
-          {settings?.operating_hours && (
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-              <span>{settings.operating_hours}</span>
-            </div>
-          )}
+        <div className="space-y-2.5">
+          {/* Alamat */}
+          <div className="flex items-start gap-2 text-xs text-gray-400">
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-px" style={{ color: PRIMARY }} />
+            <span>{settings?.address || DEFAULT_INFO.address}</span>
+          </div>
+
+          {/* Telepon / WhatsApp */}
+          <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+            <Phone className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+            <span>{settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number}</span>
+          </a>
+
+          {/* Jam Buka */}
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+            <span>{settings?.operating_hours || DEFAULT_INFO.operating_hours}</span>
+          </div>
+
+          {/* Instagram */}
           {settings?.instagram_url && (
             <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
@@ -320,18 +377,26 @@ export default function Home() {
               <span>Instagram</span>
             </a>
           )}
-          {settings?.whatsapp_number && (
-            <a href={`https://wa.me/${settings.whatsapp_number?.replace(/^0/, '62').replace(/^\+/, '')}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-              <MessageCircle className="w-3.5 h-3.5 text-green-400" />
-              <span>WhatsApp</span>
-            </a>
-          )}
+
+          {/* WhatsApp Chat */}
+          <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+            <MessageCircle className="w-3.5 h-3.5 text-green-400" />
+            <span>Chat WhatsApp</span>
+          </a>
+
+          {/* GoFood */}
+          <a href={settings?.gofood_url || DEFAULT_INFO.gofood_url}
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
+            <ShoppingBag className="w-3.5 h-3.5" style={{ color: '#e8173e' }} />
+            <span>Pesan via GoFood</span>
+          </a>
         </div>
         <div className="border-t border-gray-800 mt-6 pt-4">
           <p className="text-[11px] text-gray-600 text-center">
-            © {new Date().getFullYear()} {settings?.restaurant_name || 'Waroeng RCM Kang Abuy'}
+            © {new Date().getFullYear()} {settings?.restaurant_name || DEFAULT_INFO.restaurant_name}
           </p>
         </div>
       </footer>
