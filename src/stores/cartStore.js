@@ -14,34 +14,34 @@ const useCartStore = create(
       
       addItem: (item) => {
         const items = get().items
-        const existingItem = items.find(i => i.id === item.id)
+        // Generate a cartItemId based on the original id and a safe note string
+        const safeNote = (item.note || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+        const cartItemId = item.cartItemId || `${item.id}-${safeNote}`
         
-        if (existingItem) {
-          set({
-            items: items.map(i =>
-              i.id === item.id
-                ? { ...i, quantity: i.quantity + 1 }
-                : i
-            )
-          })
+        const existingItemIndex = items.findIndex(i => i.cartItemId === cartItemId)
+        
+        if (existingItemIndex >= 0) {
+          const newItems = [...items]
+          newItems[existingItemIndex].quantity += item.quantity || 1
+          set({ items: newItems })
         } else {
-          set({ items: [...items, { ...item, quantity: 1 }] })
+          set({ items: [...items, { ...item, cartItemId, quantity: item.quantity || 1 }] })
         }
       },
       
-      removeItem: (itemId) => {
-        set({ items: get().items.filter(i => i.id !== itemId) })
+      removeItem: (cartItemId) => {
+        set({ items: get().items.filter(i => i.cartItemId !== cartItemId) })
       },
       
-      updateQuantity: (itemId, quantity) => {
+      updateQuantity: (cartItemId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(itemId)
+          get().removeItem(cartItemId)
           return
         }
         
         set({
           items: get().items.map(i =>
-            i.id === itemId ? { ...i, quantity } : i
+            i.cartItemId === cartItemId ? { ...i, quantity } : i
           )
         })
       },

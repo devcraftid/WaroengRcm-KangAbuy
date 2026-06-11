@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, ShoppingBag, UtensilsCrossed, Star, Heart, Percent, Package
 } from 'lucide-react'
@@ -19,6 +19,12 @@ export default function CustomerMenu() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState([])
+  const PRIMARY = '#f05a28'
+
+  // Modal state
+  const [activeMenu, setActiveMenu] = useState(null)
+  const [modalQty, setModalQty] = useState(1)
+  const [modalNote, setModalNote] = useState('')
 
   useEffect(() => {
     loadData()
@@ -75,9 +81,33 @@ export default function CustomerMenu() {
     toast.success(newFavs.includes(menuId) ? 'Ditambahkan ke favorit' : 'Dihapus dari favorit')
   }
 
-  const handleAddToCart = (menu) => {
-    addItem({ id: menu.id, name: menu.name, price: menu.price, image_url: menu.image_url, description: menu.description })
-    toast.success(`${menu.name} ditambahkan`, { action: { label: 'Keranjang', onClick: () => window.location.href = '/cart' } })
+  const openAddModal = (menu) => {
+    setActiveMenu(menu)
+    setModalQty(1)
+    setModalNote('')
+  }
+
+  const closeModal = () => {
+    setActiveMenu(null)
+    setModalNote('')
+  }
+
+  const handleConfirmAdd = () => {
+    if (!activeMenu) return
+    
+    addItem({
+      id: activeMenu.id,
+      name: activeMenu.name,
+      price: activeMenu.discountedPrice || activeMenu.price,
+      image_url: activeMenu.image_url,
+      quantity: modalQty,
+      note: modalNote.trim()
+    })
+
+    toast.success(`${modalQty} ${activeMenu.name} ditambahkan`, {
+      action: { label: 'Keranjang', onClick: () => window.location.href = '/cart' }
+    })
+    closeModal()
   }
 
   // Fungsi hitung diskon
@@ -163,7 +193,11 @@ export default function CustomerMenu() {
             const discount = getDiscountedPrice(menu.price)
             return (
               <motion.div key={menu.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }}
-                className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all group">
+                onClick={() => {
+                  const d = getDiscountedPrice(menu.price)
+                  openAddModal({ ...menu, discountedPrice: d?.discountedPrice })
+                }}
+                className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
                 
                 {/* Image */}
                 <div className="relative h-32 sm:h-36 bg-gradient-to-br from-orange-100 to-red-100 overflow-hidden">
@@ -214,9 +248,13 @@ export default function CustomerMenu() {
                         <span className="text-sm sm:text-base font-bold text-orange-600">{formatCurrency(menu.price)}</span>
                       )}
                     </div>
-                    <button onClick={() => handleAddToCart(menu)}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white flex items-center justify-center hover:shadow-lg active:scale-95 transition-all">
-                      <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <button onClick={(e) => {
+                      e.stopPropagation()
+                      const d = getDiscountedPrice(menu.price)
+                      openAddModal({ ...menu, discountedPrice: d?.discountedPrice })
+                    }}
+                      className="px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 font-bold text-xs flex items-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                      + Tambah
                     </button>
                   </div>
                 </div>
@@ -233,6 +271,92 @@ export default function CustomerMenu() {
           <p className="text-sm text-gray-500">Coba kata kunci lain</p>
         </div>
       )}
+
+      {/* ─── MODAL ADD TO CART ─── */}
+      <AnimatePresence>
+        {activeMenu && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0"
+              onClick={closeModal}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative bg-white w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Handle Bar (Mobile) */}
+              <div className="w-full flex justify-center pt-3 pb-2 sm:hidden absolute top-0 z-20">
+                <div className="w-12 h-1.5 bg-white/50 backdrop-blur-sm rounded-full"></div>
+              </div>
+
+              {/* Image Header */}
+              <div className="relative h-48 sm:h-56 bg-gray-100 shrink-0">
+                {activeMenu.image_url ? (
+                  <img src={activeMenu.image_url} alt={activeMenu.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-orange-50">
+                    <UtensilsCrossed className="w-12 h-12 text-orange-200" />
+                  </div>
+                )}
+                {/* Tutup Button */}
+                <button
+                  onClick={closeModal}
+                  className="absolute top-4 right-4 w-8 h-8 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Konten Scrollable */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{activeMenu.name}</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl font-bold" style={{ color: PRIMARY }}>{formatCurrency(activeMenu.discountedPrice || activeMenu.price)}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {activeMenu.description || 'Tidak ada deskripsi.'}
+                  </p>
+
+                  {/* Catatan Field */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Catatan Tambahan (Opsional)</label>
+                    <textarea
+                      value={modalNote}
+                      onChange={(e) => setModalNote(e.target.value)}
+                      placeholder="Contoh: Tidak pedas, sedikit manis, dll..."
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors resize-none bg-gray-50 hover:bg-white"
+                      rows="2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 bg-white border-t border-gray-100 flex items-center justify-between sticky bottom-0 z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-500 text-sm font-medium">Jml</span>
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-1 border border-gray-100">
+                    <button onClick={() => setModalQty(Math.max(1, modalQty - 1))} className="w-8 h-8 flex items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">-</button>
+                    <span className="font-semibold text-gray-900 w-4 text-center">{modalQty}</span>
+                    <button onClick={() => setModalQty(modalQty + 1)} className="w-8 h-8 flex items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">+</button>
+                  </div>
+                </div>
+                <button onClick={handleConfirmAdd} className="flex-1 ml-4 py-3 rounded-xl text-white font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center" style={{ background: PRIMARY }}>
+                  Tambah • {formatCurrency((activeMenu.discountedPrice || activeMenu.price) * modalQty)}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }

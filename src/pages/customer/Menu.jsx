@@ -27,6 +27,7 @@ export default function Menu() {
   // Modal state
   const [activeMenu, setActiveMenu] = useState(null)   // menu object yang sedang di-view
   const [modalQty, setModalQty] = useState(1)
+  const [modalNote, setModalNote] = useState('')
   const [expandModal, setExpandModal] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, getTotal, getItemCount } = useCartStore()
@@ -90,36 +91,42 @@ export default function Menu() {
   const openAddModal = (menu) => {
     setActiveMenu(menu)
     setModalQty(quantities[menu.id] || 1) // reset qty atau pakai qty yang sudah ada
+    setModalNote('') // reset note
     setExpandModal(false)
   }
 
   const closeModal = () => {
     setActiveMenu(null)
     setExpandModal(false)
+    setModalNote('')
   }
 
   // Konfirmasi tambah dari modal
   const handleConfirmAdd = () => {
     if (!activeMenu) return
-    const existing = items.find(i => i.id === activeMenu.id)
-    if (existing) {
-      updateQuantity(activeMenu.id, modalQty)
-    } else {
-      for (let i = 0; i < modalQty; i++) {
-        addItem({
-          id: activeMenu.id,
-          name: activeMenu.name,
-          price: activeMenu.price,
-          image_url: activeMenu.image_url,
-          description: activeMenu.description,
-        })
+    
+    addItem({
+      id: activeMenu.id,
+      name: activeMenu.name,
+      price: activeMenu.discountedPrice || activeMenu.price,
+      image_url: activeMenu.image_url,
+      quantity: modalQty,
+      note: modalNote.trim()
+    })
+
+    toast.success(`${modalQty} ${activeMenu.name} ditambahkan`, {
+      action: {
+        label: 'Lihat Keranjang',
+        onClick: () => window.location.href = '/cart'
       }
-      // Kalau qty > 1 update langsung karena addItem hanya +1
-      if (modalQty > 1) {
-        setTimeout(() => updateQuantity(activeMenu.id, modalQty), 50)
-      }
-    }
-    toast.success(`${activeMenu.name} ditambahkan ke pesanan`)
+    })
+
+    // Update qty sinkron
+    setQuantities(prev => ({
+      ...prev,
+      [activeMenu.id]: (prev[activeMenu.id] || 0) + modalQty
+    }))
+    
     closeModal()
   }
 
@@ -374,46 +381,35 @@ export default function Menu() {
               </div>
 
               {/* Detail Konten — scrollable */}
-              <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
-                {/* Nama & Harga */}
-                <h2 className="text-base font-bold text-gray-900 leading-snug uppercase tracking-wide">
-                  {activeMenu.name}
-                </h2>
-                <p className="text-lg font-bold mt-1" style={{ color: PRIMARY }}>
-                  {formatCurrency(activeMenu.price)}
-                </p>
-
-                {/* Deskripsi */}
-                {activeMenu.description && (
-                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                    {activeMenu.description}
-                  </p>
-                )}
-
-                {/* Kategori info */}
-                {activeMenu.categories?.name && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Kategori
-                    </p>
-                    <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
-                      {activeMenu.categories.name}
-                    </span>
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{activeMenu.name}</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    {activeMenu.discountedPrice ? (
+                      <>
+                        <span className="text-xl font-bold text-red-600">{formatCurrency(activeMenu.discountedPrice)}</span>
+                        <span className="text-sm text-gray-400 line-through">{formatCurrency(activeMenu.price)}</span>
+                      </>
+                    ) : (
+                      <span className="text-xl font-bold" style={{ color: PRIMARY }}>{formatCurrency(activeMenu.price)}</span>
+                    )}
                   </div>
-                )}
+                  <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {activeMenu.description || 'Tidak ada deskripsi.'}
+                  </p>
 
-                {/* Catatan */}
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</p>
-                  <input
-                    type="text"
-                    placeholder="Tambahkan catatan (opsional)..."
-                    className="w-full text-sm px-3 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-50 bg-gray-50 placeholder-gray-400"
-                  />
+                  {/* Catatan Field */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Catatan Tambahan (Opsional)</label>
+                    <textarea
+                      value={modalNote}
+                      onChange={(e) => setModalNote(e.target.value)}
+                      placeholder="Contoh: Tidak pedas, sedikit manis, dll..."
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors resize-none bg-gray-50 hover:bg-white"
+                      rows="2"
+                    />
+                  </div>
                 </div>
-
-                {/* Spacer supaya konten tidak ketutup sticky footer */}
-                <div className="h-4" />
               </div>
 
               {/* ─── Sticky Footer: Qty + Add Button ─── */}

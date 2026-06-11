@@ -51,7 +51,7 @@ export default function Cart() {
         <AnimatePresence>
           {items.map(item => (
             <motion.div
-              key={item.id}
+              key={item.cartItemId || item.id}
               layout
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -74,6 +74,9 @@ export default function Cart() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name}</p>
+                  {item.note && (
+                    <p className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-md inline-block mt-1">📝 {item.note}</p>
+                  )}
                   <p className="text-xs font-medium mt-0.5" style={{ color: PRIMARY }}>
                     {formatCurrency(item.price)}
                   </p>
@@ -82,7 +85,7 @@ export default function Cart() {
                     {/* Qty counter */}
                     <div className="flex items-center rounded-lg overflow-hidden border" style={{ borderColor: PRIMARY }}>
                       <button
-                        onClick={() => item.quantity <= 1 ? removeItem(item.id) : updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => item.quantity <= 1 ? removeItem(item.cartItemId || item.id) : updateQuantity(item.cartItemId || item.id, item.quantity - 1)}
                         className="w-7 h-7 flex items-center justify-center hover:bg-orange-50 transition-colors"
                         style={{ color: PRIMARY }}>
                         <Minus className="w-3 h-3" />
@@ -91,7 +94,7 @@ export default function Cart() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.cartItemId || item.id, item.quantity + 1)}
                         className="w-7 h-7 flex items-center justify-center hover:bg-orange-50 transition-colors"
                         style={{ color: PRIMARY }}>
                         <Plus className="w-3 h-3" />
@@ -102,7 +105,7 @@ export default function Cart() {
                       <p className="text-sm font-bold text-gray-900">
                         {formatCurrency(item.price * item.quantity)}
                       </p>
-                      <button onClick={() => removeItem(item.id)}
+                      <button onClick={() => removeItem(item.cartItemId || item.id)}
                         className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>

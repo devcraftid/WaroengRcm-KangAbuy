@@ -84,6 +84,14 @@ export default function Checkout() {
 
     try {
       // 1. BUAT ORDER - STATUS PENDING
+      // Gabungkan catatan dari cart items
+      const itemNotes = items
+        .filter(i => i.note)
+        .map(i => `[${i.name} x${i.quantity}: ${i.note}]`)
+        .join(', ')
+      
+      const finalNote = [notes, itemNotes].filter(Boolean).join(' | ')
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -92,7 +100,7 @@ export default function Checkout() {
           order_type: orderTypeState,
           status: 'pending', // SELALU PENDING DULU
           total_amount: total,
-          notes: notes || null
+          notes: finalNote || null
         })
         .select()
         .single()
@@ -423,8 +431,11 @@ export default function Checkout() {
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border">
             <h2 className="text-base font-semibold mb-3">Ringkasan</h2>
             {items.map(item => (
-              <div key={item.id} className="flex justify-between text-sm py-1">
-                <span className="text-gray-600">{item.name} x{item.quantity}</span>
+              <div key={item.cartItemId || item.id} className="flex justify-between text-sm py-1">
+                <div className="flex flex-col">
+                  <span className="text-gray-600">{item.name} x{item.quantity}</span>
+                  {item.note && <span className="text-[10px] text-orange-600">📝 {item.note}</span>}
+                </div>
                 <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
               </div>
             ))}
