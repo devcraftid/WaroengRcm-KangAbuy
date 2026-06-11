@@ -139,8 +139,8 @@
 
   /* ── Checkout Bar ── */
   .checkout-bar {
-    @apply absolute bottom-0 left-0 right-0 z-50 flex items-center
-           gap-3 px-4 py-3;
+    @apply fixed bottom-0 left-0 right-0 z-50 flex items-center
+           gap-3 px-4 py-3 mx-auto max-w-[480px];
     background: #f05a28;
   }
 

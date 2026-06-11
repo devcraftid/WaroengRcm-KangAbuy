@@ -304,26 +304,26 @@ export default function Menu() {
       <AnimatePresence>
         {activeMenu && (
           <>
-            {/* Overlay — absolute, terkurung dalam container */}
+            {/* Overlay — fixed, menutupi viewport */}
             <motion.div
               key="overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-black/50 z-40"
+              className="fixed inset-0 bg-black/50 z-40"
               style={{ top: 0 }}
               onClick={closeModal}
             />
 
-            {/* Bottom Sheet — absolute, muncul dari bawah container */}
+            {/* Bottom Sheet — fixed, muncul dari bawah viewport */}
             <motion.div
               key="modal"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 z-50 bg-white flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-white flex flex-col mx-auto max-w-[480px]"
               style={{
                 borderRadius: '20px 20px 0 0',
                 maxHeight: expandModal ? '85vh' : '75vh',
