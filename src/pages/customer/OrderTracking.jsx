@@ -95,7 +95,8 @@ export default function OrderTracking() {
   // Inject Midtrans Snap script on mount
   useEffect(() => {
     const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
-    const isProduction = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === 'true';
+    // Otomatis deteksi production jika key tidak berawalan SB-
+    const isProduction = clientKey && !clientKey.startsWith('SB-');
     const scriptUrl = isProduction 
       ? 'https://app.midtrans.com/snap/snap.js'
       : 'https://app.sandbox.midtrans.com/snap/snap.js';
@@ -147,6 +148,10 @@ export default function OrderTracking() {
 
       const snapData = await snapRes.json()
       if (snapData.token) {
+        if (!window.snap) {
+          toast.error('Gagal memuat sistem pembayaran. Coba refresh halaman.')
+          return
+        }
         window.snap.pay(snapData.token, {
           onSuccess: function() {
             toast.success('Pembayaran berhasil!')
