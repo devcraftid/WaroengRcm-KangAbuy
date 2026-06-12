@@ -224,9 +224,6 @@ export default function Menu() {
 
                 {/* Form */}
                 <div className="p-5 space-y-4">
-                  <p className="text-sm text-gray-500 text-center">
-                    Isi info berikut agar kasir tahu pesanan kamu
-                  </p>
 
                   {/* Nama */}
                   <div>
