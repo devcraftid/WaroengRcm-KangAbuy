@@ -30,14 +30,8 @@ export default function Menu() {
   const [modalNote, setModalNote] = useState('')
   const [expandModal, setExpandModal] = useState(false)
 
-  const { items, addItem, updateQuantity, removeItem, getTotal, getItemCount, setGuestInfo, guestName, guestPhone, guestNotes } = useCartStore()
+  const { items, addItem, updateQuantity, removeItem, getTotal, getItemCount } = useCartStore()
   const { user } = useAuthStore()
-
-  // === GUEST INFO MODAL ===
-  const [showGuestModal, setShowGuestModal] = useState(false)
-  const [inputName, setInputName] = useState(guestName || '')
-  const [inputPhone, setInputPhone] = useState(guestPhone || '')
-  const [inputNotes, setInputNotes] = useState(guestNotes || '')
 
   useEffect(() => {
     loadData()
@@ -49,26 +43,7 @@ export default function Menu() {
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 600)
     }
-
-    // Tampilkan modal guest jika belum login dan belum mengisi nama
-    if (!user && !guestName) {
-      setShowGuestModal(true)
-    }
-  }, [selectedCategory, user, guestName])
-
-  const handleSaveGuestInfo = () => {
-    if (!inputName.trim()) {
-      toast.error('Nama wajib diisi!')
-      return
-    }
-    if (!inputPhone.trim()) {
-      toast.error('Nomor WhatsApp wajib diisi!')
-      return
-    }
-    setGuestInfo({ name: inputName.trim(), phone: inputPhone.trim(), notes: inputNotes.trim() })
-    setShowGuestModal(false)
-    toast.success(`Halo, ${inputName.trim()}! Silakan pilih menu 😊`)
-  }
+  }, [selectedCategory])
 
   // Sync quantities dari cart
   useEffect(() => {
@@ -114,7 +89,6 @@ export default function Menu() {
 
   // Buka modal detail menu
   const openAddModal = (menu) => {
-    if (showGuestModal) return // Jangan bisa tambah kalau belum isi nama
     setActiveMenu(menu)
     setModalQty(quantities[menu.id] || 1) // reset qty atau pakai qty yang sudah ada
     setModalNote('') // reset note
@@ -157,7 +131,6 @@ export default function Menu() {
   }
 
   const handleIncrease = (menu) => {
-    if (showGuestModal) return
     const item = items.find(i => i.id === menu.id)
     if (item) updateQuantity(menu.id, item.quantity + 1)
     else addItem({ id: menu.id, name: menu.name, price: menu.price, image_url: menu.image_url, description: menu.description })
@@ -189,107 +162,6 @@ export default function Menu() {
 
   return (
     <div className="min-h-screen bg-white relative" style={{ paddingBottom: totalQty > 0 ? 60 : 16 }}>
-
-      {/* ============================================ */}
-      {/* MODAL GUEST INFO */}
-      {/* ============================================ */}
-      <AnimatePresence>
-        {showGuestModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            
-            {/* Modal Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.92 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="relative z-10 w-full max-w-sm"
-            >
-              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-                {/* Header */}
-                <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 text-white text-center">
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <UtensilsCrossed className="w-8 h-8" />
-                  </div>
-                  <h2 className="text-xl font-bold">Selamat Datang! 👋</h2>
-                  <p className="text-orange-100 text-sm mt-1">Silakan isi data untuk memesan</p>
-                </div>
-
-                {/* Form */}
-                <div className="p-5 space-y-4">
-
-                  {/* Nama */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Nama Kamu <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={inputName}
-                        onChange={e => setInputName(e.target.value)}
-                        placeholder="Contoh: Budi"
-                        autoFocus
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* No. HP */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      No. WhatsApp <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="tel"
-                        value={inputPhone}
-                        onChange={e => setInputPhone(e.target.value)}
-                        placeholder="0812-3456-7890"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Catatan */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Catatan Pesanan <span className="text-gray-400 font-normal normal-case">(opsional)</span>
-                    </label>
-                    <div className="relative">
-                      <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
-                      <textarea
-                        value={inputNotes}
-                        onChange={e => setInputNotes(e.target.value)}
-                        placeholder="Misal: tidak pedas, alergi seafood..."
-                        rows={2}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm resize-none focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveGuestInfo}
-                    className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all active:scale-95"
-                  >
-                    Mulai Pesan
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* ─── STICKY CATEGORY HEADER ─── */}
       <div className="sticky top-14 z-30 bg-white" style={{ boxShadow: '0 1px 0 #f0f0f0' }}>
