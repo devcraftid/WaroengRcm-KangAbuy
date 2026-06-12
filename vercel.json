@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/pakasir/:path*",
-      "destination": "/api/pakasir-proxy"
+      "destination": "/api/pakasir-proxy?endpoint=:path*"
     },
     {
       "source": "/(.*)",
