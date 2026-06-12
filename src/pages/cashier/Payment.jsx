@@ -454,8 +454,15 @@ export default function CashierPayment() {
                 </span>
               </p>
               {payment.proof_url && (
-                <button onClick={() => handleViewProof(payment.proof_url)} className="text-xs text-blue-600 hover:underline mt-1">
-                  👁️ Lihat Bukti Pembayaran
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleViewProof(payment.proof_url)
+                  }} 
+                  className="text-xs text-blue-600 hover:underline mt-1 font-medium flex items-center"
+                >
+                  <Eye className="w-4 h-4 mr-1" /> Lihat Bukti
                 </button>
               )}
             </div>
@@ -677,12 +684,14 @@ export default function CashierPayment() {
 
       {/* Modal Bukti */}
       {showProofModal && proofImage && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowProofModal(false)}>
+        <div className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-4" onClick={() => setShowProofModal(false)}>
           <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowProofModal(false)} className="absolute -top-10 right-0 text-white">✕ Tutup</button>
-            <div className="bg-white rounded-2xl p-4">
+            <button type="button" onClick={() => setShowProofModal(false)} className="absolute -top-10 right-0 text-white font-bold hover:text-gray-300">✕ Tutup</button>
+            <div className="bg-white rounded-2xl p-4 shadow-2xl">
               <h3 className="text-lg font-bold mb-3 text-center">📎 Bukti Pembayaran</h3>
-              <img src={proofImage} alt="Bukti" className="w-full max-h-[70vh] object-contain rounded-xl" />
+              <div className="bg-gray-50 rounded-xl p-2">
+                <img src={proofImage} alt="Bukti" className="w-full max-h-[70vh] object-contain rounded-lg" />
+              </div>
             </div>
           </div>
         </div>

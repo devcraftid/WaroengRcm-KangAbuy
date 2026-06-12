@@ -472,11 +472,13 @@ export default function ManageOrder() {
                         </p>
                         {p.proof_url && (
                           <button 
-                            onClick={() => {
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
                               setProofImage(p.proof_url)
                               setShowProofModal(true)
                             }} 
-                            className="text-xs text-blue-600 hover:underline mt-1 flex items-center"
+                            className="text-xs text-blue-600 hover:underline mt-1 flex items-center font-medium"
                           >
                             <Eye className="w-3 h-3 mr-1" /> Lihat Bukti Pembayaran
                           </button>

@@ -25,6 +25,8 @@ export default function TransactionHistory() {
   })
   const [showDetail, setShowDetail] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState(null)
+  const [showProofModal, setShowProofModal] = useState(false)
+  const [proofImage, setProofImage] = useState(null)
 
   useEffect(() => {
     loadTransactions()
@@ -268,6 +270,19 @@ export default function TransactionHistory() {
                     <p className="text-gray-400">{t.method === 'cash' ? '💵 Cash' : '📱 QRIS'}</p>
                   </div>
                 </div>
+                {t.proof_url && (
+                  <div className="mt-2 pt-2 border-t flex justify-end">
+                    <button 
+                      onClick={() => {
+                        setProofImage(t.proof_url)
+                        setShowProofModal(true)
+                      }}
+                      className="text-xs text-blue-600 font-medium flex items-center hover:underline"
+                    >
+                      <Eye className="w-3 h-3 mr-1" /> Lihat Bukti
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -302,14 +317,27 @@ export default function TransactionHistory() {
                     </td>
                     <td className="px-4 py-3 text-right text-xs font-semibold">{formatCurrency(t.amount)}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        t.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {t.status === 'completed' ? '✅ SUKSES' : 
-                         t.status === 'pending' ? '⏳ PENDING' : '❌ GAGAL'}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          t.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {t.status === 'completed' ? '✅ SUKSES' : 
+                           t.status === 'pending' ? '⏳ PENDING' : '❌ GAGAL'}
+                        </span>
+                        {t.proof_url && (
+                          <button 
+                            onClick={() => {
+                              setProofImage(t.proof_url)
+                              setShowProofModal(true)
+                            }}
+                            className="text-[10px] text-blue-600 hover:underline flex items-center"
+                          >
+                            <Eye className="w-3 h-3 mr-0.5" /> Bukti
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -317,6 +345,21 @@ export default function TransactionHistory() {
             </table>
           </div>
         </>
+      )}
+
+      {/* Modal Bukti */}
+      {showProofModal && proofImage && (
+        <div className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-4" onClick={() => setShowProofModal(false)}>
+          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowProofModal(false)} className="absolute -top-10 right-0 text-white font-medium hover:text-gray-300">✕ Tutup</button>
+            <div className="bg-white rounded-2xl p-4 shadow-2xl">
+              <h3 className="text-lg font-bold mb-3 text-center text-gray-900">📎 Bukti Pembayaran</h3>
+              <div className="bg-gray-50 rounded-xl p-2">
+                <img src={proofImage} alt="Bukti" className="w-full max-h-[70vh] object-contain rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
