@@ -3,13 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Clock, CheckCircle, ChefHat, Package, ShoppingBag,
-  ArrowLeft, MapPin, CreditCard, Banknote, QrCode,
-  AlertCircle, Image as ImageIcon, Eye
+  ArrowLeft, MapPin, Banknote, QrCode,
+  AlertCircle, CreditCard
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import { toast } from 'sonner'
-import { QRCodeSVG } from 'qrcode.react'
 
 export default function OrderTracking() {
   const { id } = useParams()
@@ -19,10 +18,7 @@ export default function OrderTracking() {
   const [payment, setPayment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showProofModal, setShowProofModal] = useState(false)
-
-  // Pakasir QRIS State
-  const [qrisString, setQrisString] = useState(null)
-  const [pakasirLoading, setPakasirLoading] = useState(false)
+  const [midtransLoading, setMidtransLoading] = useState(false)
 
   useEffect(() => {
     if (id) loadOrder()
@@ -96,108 +92,87 @@ export default function OrderTracking() {
     }
   }
 
-  // ============================================
-  // PAKASIR INTEGRATION (Generate QRIS)
-  // ============================================
+  // Inject Midtrans Snap script on mount
   useEffect(() => {
-    if (!order || !payment) return
-    if (payment.method === 'qris' && payment.status === 'pending' && !qrisString && !pakasirLoading) {
-      generatePakasirQris()
-    }
-  }, [order, payment])
-
-  const generatePakasirQris = async () => {
-    try {
-      setPakasirLoading(true)
-      const projectSlug = import.meta.env.VITE_PAKASIR_PROJECT_SLUG
-      const apiKey = import.meta.env.VITE_PAKASIR_API_KEY
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+    const isProduction = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === 'true';
+    const scriptUrl = isProduction 
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
       
-      if (!projectSlug || !apiKey) {
-        console.log('Kredensial Pakasir belum diatur di .env')
-        return
-      }
+    if (clientKey && !document.getElementById('midtrans-script')) {
+      const script = document.createElement('script');
+      script.id = 'midtrans-script';
+      script.src = scriptUrl;
+      script.setAttribute('data-client-key', clientKey);
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
-      const res = await fetch('/api/pakasir/transactioncreate/qris', {
+  // ============================================
+  // MIDTRANS INTEGRATION
+  // ============================================
+  const handlePayMidtrans = async () => {
+    if (!order || !payment) return
+    try {
+      setMidtransLoading(true)
+      
+      const { data: items } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          menus (name)
+        `)
+        .eq('order_id', order.id)
+
+      const snapRes = await fetch('/api/midtrans-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project: projectSlug,
           order_id: order.id,
-          amount: payment.amount,
-          api_key: apiKey
+          gross_amount: payment.amount,
+          customer_details: {
+            first_name: order.customer_name || 'Guest',
+            phone: order.customer_phone || '-'
+          },
+          items: items?.map(i => ({
+            id: i.menu_id,
+            price: i.price,
+            quantity: i.quantity,
+            name: i.menus?.name?.substring(0, 50) || 'Item'
+          })) || []
         })
       })
-      
-      const text = await res.text()
-      let data;
-      try {
-        data = JSON.parse(text)
-      } catch (err) {
-        throw new Error(`Bukan JSON. Status HTTP: ${res.status}. Isi: ${text}`)
-      }
-      
-      console.log('Pakasir Generate Response:', data)
-      
-      const qrStr = data?.payment?.payment_number || data?.qris_string || data?.qr_string || data?.qris || data?.data?.qris_string || data?.data?.qr_string || data?.data?.qris || (typeof data?.data === 'string' ? data.data : null)
-      
-      if (qrStr) {
-        setQrisString(qrStr)
+
+      const snapData = await snapRes.json()
+      if (snapData.token) {
+        window.snap.pay(snapData.token, {
+          onSuccess: function() {
+            toast.success('Pembayaran berhasil!')
+            loadPayment()
+            loadOrder()
+          },
+          onPending: function() {
+            toast.info('Menunggu pembayaran diselesaikan...')
+            loadPayment()
+            loadOrder()
+          },
+          onError: function() {
+            toast.error('Pembayaran gagal')
+          },
+          onClose: function() {
+            toast.error('Pembayaran belum diselesaikan')
+          }
+        })
       } else {
-        toast.error('Gagal memuat QRIS: ' + (data?.message || JSON.stringify(data)))
+        throw new Error(snapData.error || 'Gagal mendapatkan token')
       }
-    } catch (error) {
-      console.error('Error generating QRIS:', error)
-      toast.error('Koneksi ke Pakasir gagal: ' + error.message)
+    } catch (err) {
+      console.error('Midtrans error:', err)
+      toast.error('Gagal memuat pembayaran online: ' + err.message)
     } finally {
-      setPakasirLoading(false)
-    }
-  }
-
-  // ============================================
-  // PAKASIR INTEGRATION (Polling Status)
-  // ============================================
-  useEffect(() => {
-    if (!order || !payment) return
-    if (payment.method === 'qris' && payment.status === 'pending') {
-      const interval = setInterval(() => {
-        checkPakasirStatus()
-      }, 5000) // Cek setiap 5 detik
-      return () => clearInterval(interval)
-    }
-  }, [order, payment])
-
-  const checkPakasirStatus = async () => {
-    try {
-      const projectSlug = import.meta.env.VITE_PAKASIR_PROJECT_SLUG
-      const apiKey = import.meta.env.VITE_PAKASIR_API_KEY
-      if (!projectSlug || !apiKey) return
-
-      const res = await fetch(`/api/pakasir/transactiondetail?project=${projectSlug}&amount=${payment.amount}&order_id=${order.id}&api_key=${apiKey}`)
-      const data = await res.json()
-      console.log('Pakasir Status Polling:', data)
-      
-      // Asumsi status berhasil dari Pakasir adalah 'completed', 'success', atau 'paid'
-      const isPaid = data?.transaction?.status === 'completed' || data?.transaction?.status === 'success' || data?.transaction?.status === 'paid' || data?.status === 'completed' || data?.status === 'success' || data?.status === 'paid'
-      
-      if (isPaid) {
-        // 1. Update Payment
-        await supabase.from('payments').update({ 
-          status: 'completed', 
-          validated_at: new Date().toISOString() 
-        }).eq('id', payment.id)
-
-        // 2. Update Order jika masih pending
-        if (order.status === 'pending') {
-           await supabase.from('orders').update({
-             status: 'processing',
-             updated_at: new Date().toISOString()
-           }).eq('id', order.id)
-        }
-        
-        // Polling akan otomatis berhenti karena payment.status tidak lagi 'pending' setelah fetch ulang dari supabase realtime
-      }
-    } catch (error) {
-      // Abaikan error jaringan saat polling
+      setMidtransLoading(false)
     }
   }
 
@@ -233,7 +208,7 @@ export default function OrderTracking() {
         color: 'bg-yellow-50 border-yellow-200',
         textColor: 'text-yellow-700',
         title: 'Menunggu Validasi',
-        desc: payment.method === 'qris' ? 'Bukti pembayaran sudah diupload. Menunggu validasi kasir.' : 'Menunggu konfirmasi pembayaran.',
+        desc: payment.method === 'qris' ? 'Selesaikan pembayaran Anda.' : 'Menunggu konfirmasi pembayaran dari kasir.',
         badge: '⚠️ MENUNGGU',
         badgeColor: 'bg-yellow-100 text-yellow-700'
       }
@@ -335,9 +310,7 @@ export default function OrderTracking() {
           </div>
         </div>
 
-        {/* ============================================ */}
         {/* PAYMENT STATUS CARD */}
-        {/* ============================================ */}
         <div className={`rounded-2xl border p-4 sm:p-6 ${paymentStatus.color}`}>
           <div className="flex items-start space-x-4">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${paymentStatus.badgeColor}`}>
@@ -352,53 +325,41 @@ export default function OrderTracking() {
               </div>
               <p className="text-sm opacity-80 mt-1">{paymentStatus.desc}</p>
               
-              {/* Metode Pembayaran */}
               {payment && (
                 <div className="flex items-center space-x-2 mt-3">
-                  {payment.method === 'cash' ? (
-                    <span className="inline-flex items-center px-2 py-1 bg-white/50 rounded-lg text-xs">
-                      <Banknote className="w-3 h-3 mr-1" /> Cash
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-1 bg-white/50 rounded-lg text-xs">
-                      <QrCode className="w-3 h-3 mr-1" /> QRIS
-                    </span>
-                  )}
+                  <span className="inline-flex items-center px-2 py-1 bg-white/50 rounded-lg text-xs">
+                    {payment.method === 'cash' ? <Banknote className="w-3 h-3 mr-1" /> : <QrCode className="w-3 h-3 mr-1" />}
+                    {payment.method === 'cash' ? 'Cash' : 'QRIS'}
+                  </span>
                   <span className="text-xs">
                     {formatCurrency(payment.amount)}
                   </span>
                 </div>
               )}
 
-              {/* Bukti Pembayaran / Dynamic QRIS */}
+              {/* Midtrans Button */}
               {payment?.method === 'qris' && payment?.status === 'pending' && (
-                <div className="mt-4 bg-white p-4 rounded-xl border border-gray-100 flex flex-col items-center">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Scan QRIS Berikut</p>
-                  
-                  {pakasirLoading ? (
-                    <div className="w-40 h-40 flex items-center justify-center bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  ) : qrisString ? (
-                    <div className="bg-white p-2 rounded-xl shadow-sm mb-2">
-                      <QRCodeSVG value={qrisString} size={180} />
-                    </div>
-                  ) : (
-                    <div className="w-40 h-40 flex items-center justify-center bg-red-50 text-red-500 text-xs text-center p-2 rounded-xl border border-red-100">
-                      Gagal memuat QRIS
-                    </div>
-                  )}
-                  
-                  <p className="text-[10px] text-gray-400 mt-2 text-center max-w-[200px]">
-                    Status akan otomatis terupdate setelah Anda melakukan pembayaran.
-                  </p>
+                <div className="mt-6">
+                  <button 
+                    onClick={handlePayMidtrans}
+                    disabled={midtransLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2"
+                  >
+                    {midtransLoading ? (
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        Bayar Sekarang
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* ============================================ */}
         {/* ORDER PROGRESS */}
         {/* ============================================ */}
         <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6">

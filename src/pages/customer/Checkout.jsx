@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Banknote, QrCode, MapPin, Phone, User,
   ShoppingBag, CheckCircle, Upload,
-  ArrowLeft, Clock, UtensilsCrossed
+  ArrowLeft, Clock, UtensilsCrossed, CreditCard
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useCartStore from '../../stores/cartStore'
@@ -18,6 +18,23 @@ export default function Checkout() {
   const { user, profile } = useAuthStore()
   const navigate = useNavigate()
   const total = getTotal()
+
+  useEffect(() => {
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+    const isProduction = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === 'true';
+    const scriptUrl = isProduction 
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
+      
+    if (clientKey && !document.getElementById('midtrans-script')) {
+      const script = document.createElement('script');
+      script.id = 'midtrans-script';
+      script.src = scriptUrl;
+      script.setAttribute('data-client-key', clientKey);
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   const [customerName, setCustomerName] = useState(profile?.full_name || guestName || '')
   const [customerPhone, setCustomerPhone] = useState(profile?.phone || guestPhone || '')
@@ -177,12 +194,66 @@ export default function Checkout() {
       })
 
       console.log('✅ Checkout complete! Menunggu pembayaran.')
+      
+      // Jika pembayaran online (Midtrans), langsung buka Snap
+      if (paymentMethod === 'qris') {
+        try {
+          const snapRes = await fetch('/api/midtrans-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: order.id,
+              gross_amount: total,
+              customer_details: {
+                first_name: customerName,
+                phone: customerPhone
+              },
+              items: items.map(i => ({
+                id: i.id,
+                price: i.price,
+                quantity: i.quantity,
+                name: i.name.substring(0, 50)
+              }))
+            })
+          })
+
+          const snapData = await snapRes.json()
+          if (snapData.token) {
+            clearCart()
+            window.snap.pay(snapData.token, {
+              onSuccess: function(result) {
+                toast.success('Pembayaran berhasil!')
+                navigate(`/order/${order.id}`)
+              },
+              onPending: function(result) {
+                toast.info('Menunggu pembayaran diselesaikan...')
+                navigate(`/order/${order.id}`)
+              },
+              onError: function(result) {
+                toast.error('Pembayaran gagal')
+                navigate(`/order/${order.id}`)
+              },
+              onClose: function() {
+                toast.error('Pembayaran belum diselesaikan')
+                navigate(`/order/${order.id}`)
+              }
+            })
+            return
+          } else {
+            throw new Error(snapData.error || 'Gagal mendapatkan token Midtrans')
+          }
+        } catch (err) {
+          console.error('Midtrans Snap Error:', err)
+          toast.error('Gagal memuat pembayaran online')
+          navigate(`/order/${order.id}`)
+          return
+        }
+      }
+
+      // Jika Cash
       clearCart()
-      // Suara konfirmasi untuk customer
       playOrderNewSound()
       toast.success('Pesanan dibuat!')
-      
-      // Langsung redirect ke halaman tracking order untuk bayar QRIS atau lihat status
       navigate(`/order/${order.id}`)
 
     } catch (error) {
@@ -391,16 +462,16 @@ export default function Checkout() {
               </button>
               <button type="button" onClick={() => setPaymentMethod('qris')}
                 className={`p-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${paymentMethod === 'qris' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'}`}>
-                <QrCode className="w-6 h-6" />
-                <span className="font-bold text-sm">QRIS Transfer</span>
+                <CreditCard className="w-6 h-6" />
+                <span className="font-bold text-sm">QRIS / Online</span>
               </button>
             </div>
 
             {paymentMethod === 'qris' && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 pt-4 border-t border-gray-100 space-y-4">
                 <div className="text-center p-4 bg-orange-50 rounded-xl text-sm font-medium text-orange-700 border border-orange-200">
-                  <QrCode className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-                  Kode QRIS akan dibuat setelah Anda memencet tombol "Pesan Sekarang". Silakan siapkan aplikasi pembayaran Anda (BCA, GoPay, OVO, Dana, dll).
+                  <CreditCard className="w-8 h-8 mx-auto mb-2 text-orange-500" />
+                  Popup pembayaran Midtrans (QRIS, GoPay, ShopeePay, dll) akan muncul otomatis setelah Anda menekan tombol "Pesan Sekarang".
                 </div>
               </motion.div>
             )}
