@@ -28,6 +28,8 @@ export default function ManageOrder() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
+  const [showProofModal, setShowProofModal] = useState(false)
+  const [proofImage, setProofImage] = useState(null)
 
   useEffect(() => {
     loadOrders()
@@ -456,6 +458,34 @@ export default function ManageOrder() {
                   </div>
                 </div>
 
+                {/* Payments */}
+                {selectedOrder.payments && selectedOrder.payments.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Pembayaran</h3>
+                    {selectedOrder.payments.map((p, i) => (
+                      <div key={i} className={`p-3 rounded-xl mb-2 ${p.method === 'cash' ? 'bg-green-50' : 'bg-blue-50'}`}>
+                        <p className="text-sm">
+                          {p.method === 'cash' ? '💵 Cash' : '📱 QRIS'} · 
+                          <span className={p.status === 'completed' ? 'text-green-600 font-bold ml-1' : 'text-yellow-600 ml-1'}>
+                            {p.status === 'completed' ? 'LUNAS' : 'PENDING'}
+                          </span>
+                        </p>
+                        {p.proof_url && (
+                          <button 
+                            onClick={() => {
+                              setProofImage(p.proof_url)
+                              setShowProofModal(true)
+                            }} 
+                            className="text-xs text-blue-600 hover:underline mt-1 flex items-center"
+                          >
+                            <Eye className="w-3 h-3 mr-1" /> Lihat Bukti Pembayaran
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Notes */}
                 {selectedOrder.notes && (
                   <div>
@@ -468,6 +498,19 @@ export default function ManageOrder() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal Bukti */}
+      {showProofModal && proofImage && (
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4" onClick={() => setShowProofModal(false)}>
+          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowProofModal(false)} className="absolute -top-10 right-0 text-white font-medium hover:text-gray-300">✕ Tutup</button>
+            <div className="bg-white rounded-2xl p-4">
+              <h3 className="text-lg font-bold mb-3 text-center">📎 Bukti Pembayaran</h3>
+              <img src={proofImage} alt="Bukti" className="w-full max-h-[70vh] object-contain rounded-xl" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
