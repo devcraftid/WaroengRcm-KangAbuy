@@ -1,11 +1,12 @@
 {
   "rewrites": [
     {
+      "source": "/api/pakasir/:path*",
+      "destination": "https://app.pakasir.com/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite"
+  ]
 }
