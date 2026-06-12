@@ -19,6 +19,7 @@ import { useRealtimeNotifications } from '../../hooks/useRealtime'
 import useAuthStore from '../../stores/authStore'
 import { formatDateTime } from '../../utils/format'
 import { toast } from 'sonner'
+import { playNotificationByType } from '../../utils/sound'
 
 export default function AdminNotifications() {
   const { user } = useAuthStore()
@@ -35,6 +36,8 @@ export default function AdminNotifications() {
 
   useRealtimeNotifications(user?.id, (newNotification) => {
     setNotifications(prev => [newNotification, ...prev])
+    // Play suara sesuai tipe notifikasi
+    playNotificationByType(newNotification.type)
     toast.info(newNotification.title, {
       description: newNotification.message
     })

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
+import { playNotificationByType } from '../../utils/sound'
 
 const menuItems = [
   { path: '/cashier', icon: LayoutDashboard, label: 'Dashboard' },
@@ -200,15 +201,19 @@ function NotificationBadge() {
   useEffect(() => {
     loadUnreadCount()
     
-    // Subscribe to new notifications
+    // Subscribe to new notifications — play sound on INSERT
     const channel = supabase
       .channel('cashier-notifications')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications'
-      }, () => {
+      }, (payload) => {
         loadUnreadCount()
+        // Play sound sesuai tipe notifikasi baru
+        if (payload?.new?.type) {
+          playNotificationByType(payload.new.type)
+        }
       })
       .subscribe()
 

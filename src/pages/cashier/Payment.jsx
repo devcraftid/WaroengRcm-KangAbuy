@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
 import { formatCurrency, formatDateTime, getOrderTypeLabel } from '../../utils/format'
 import { toast } from 'sonner'
+import { playPaymentSuccessSound } from '../../utils/sound'
 
 export default function CashierPayment() {
   const { id } = useParams()
@@ -169,7 +170,7 @@ export default function CashierPayment() {
         status: orderData.status 
       })
 
-      // Customer
+      // Customer dari profil (jika login) atau dari field order (jika guest)
       let customer = null
       if (orderData.customer_id) {
         const { data: cust } = await supabase
@@ -180,7 +181,13 @@ export default function CashierPayment() {
         customer = cust
       }
 
-      setOrder({ ...orderData, customer })
+      // Gabungkan: prioritaskan profil, fallback ke field order
+      setOrder({
+        ...orderData,
+        customer,
+        display_name: customer?.full_name || orderData.customer_name || 'Guest',
+        display_phone: customer?.phone || orderData.customer_phone || null,
+      })
 
       // Items
       const { data: items } = await supabase
@@ -289,6 +296,8 @@ export default function CashierPayment() {
       })
 
       toast.success('Pembayaran SUKSES! ✅')
+      // Play suara pembayaran lunas
+      playPaymentSuccessSound()
       
       // Refresh data
       loadOrderDetail(order.id)
@@ -374,11 +383,23 @@ export default function CashierPayment() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-            <div><p className="text-xs text-gray-500">Customer</p><p className="font-medium">{order.customer?.full_name || 'Guest'}</p></div>
+            <div>
+              <p className="text-xs text-gray-500">Customer</p>
+              <p className="font-medium">{order.display_name}</p>
+              {order.display_phone && (
+                <p className="text-xs text-gray-400">{order.display_phone}</p>
+              )}
+            </div>
             <div><p className="text-xs text-gray-500">Tipe</p><p className="font-medium">{getOrderTypeLabel(order.order_type)}</p></div>
             <div><p className="text-xs text-gray-500">Status Order</p><span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">{order.status}</span></div>
             {order.table_number && <div><p className="text-xs text-gray-500">Meja</p><p className="font-medium">{order.table_number}</p></div>}
             <div className="col-span-2"><p className="text-xs text-gray-500">Tanggal</p><p className="text-xs">{formatDateTime(order.created_at)}</p></div>
+            {order.notes && (
+              <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                <p className="text-xs font-semibold text-amber-700 mb-0.5">📝 Catatan Pesanan</p>
+                <p className="text-xs text-amber-800">{order.notes}</p>
+              </div>
+            )}
           </div>
 
           {/* Payment Info */}

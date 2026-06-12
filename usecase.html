@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waroeng RCM - Use Case Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+            background: #f9fafb;
+            color: #111827;
+        }
+
+        .diagram-container {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #1f2937;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Diagram Use Case - Waroeng RCM Kang Abuy</h1>
+
+    <div class="diagram-container">
+        <h2>1. Keseluruhan Sistem (General Use Case)</h2>
+        <div class="mermaid">
+            flowchart LR
+                Admin([Admin])
+                Cashier([Cashier])
+                Customer([Customer])
+
+                subgraph System [Waroeng RCM System]
+                    direction TB
+                    UC_Auth([Autentikasi Login])
+                    UC_Master([Manajemen Master Data])
+                    UC_Trans([Manajemen Transaksi & Order])
+                    UC_Cust([Manajemen Pelanggan])
+                    UC_Report([Laporan & Analitik])
+                    UC_Order([Pemesanan Makanan])
+                end
+
+                Admin --> UC_Auth
+                Admin --> UC_Master
+                Admin --> UC_Trans
+                Admin --> UC_Cust
+                Admin --> UC_Report
+
+                Cashier --> UC_Auth
+                Cashier --> UC_Trans
+
+                Customer --> UC_Auth
+                Customer --> UC_Order
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. Use Case: Admin (Owner)</h2>
+        <div class="mermaid">
+            flowchart LR
+                Admin([Admin])
+
+                subgraph AdminDashboard [Admin Dashboard]
+                    direction TB
+                    UC_Login([Login / Autentikasi])
+                    UC_Rev([Monitor Real-time Revenue])
+                    UC_Menu([Kelola Menu & Kategori])
+                    UC_Promo([Kelola Promosi & Voucher])
+                    UC_Order([Manajemen Pesanan / Order])
+                    UC_Table([Kelola Meja & Sistem QR])
+                    UC_Users([Kelola Akun Kasir & Pelanggan])
+                    UC_Report([Lihat Analitik & Laporan])
+                    UC_CMS([Kelola Konten Website CMS])
+                    UC_QRIS([Kelola Pengaturan QRIS])
+                end
+
+                Admin --> UC_Login
+                Admin --> UC_Rev
+                Admin --> UC_Menu
+                Admin --> UC_Promo
+                Admin --> UC_Order
+                Admin --> UC_Table
+                Admin --> UC_Users
+                Admin --> UC_Report
+                Admin --> UC_CMS
+                Admin --> UC_QRIS
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>3. Use Case: Cashier (Kasir)</h2>
+        <div class="mermaid">
+            flowchart LR
+                Cashier([Cashier])
+
+                subgraph CashierDashboard [Cashier Dashboard]
+                    direction TB
+                    UC_Login([Login])
+                    UC_POS([Gunakan Sistem POS])
+                    UC_Order([Buat & Kelola Pesanan])
+                    UC_Pay([Proses Pembayaran Cash/QRIS])
+                    UC_Table([Monitor Meja & Antrean Takeaway])
+                    UC_History([Lihat Riwayat Transaksi])
+                    UC_Closing([Lakukan Daily Closing])
+                    UC_Print([Cetak Struk Receipt])
+                end
+
+                Cashier --> UC_Login
+                Cashier --> UC_POS
+                Cashier --> UC_Order
+                Cashier --> UC_Pay
+                Cashier --> UC_Table
+                Cashier --> UC_History
+                Cashier --> UC_Closing
+                Cashier --> UC_Print
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>4. Use Case: Customer (Pelanggan)</h2>
+        <div class="mermaid">
+            flowchart LR
+                Customer([Customer])
+
+                subgraph CustomerInterface [Customer Interface]
+                    direction TB
+                    UC_ScanQR([Scan QR Meja])
+                    UC_Login([Login / Guest Checkout])
+                    UC_LoginType([Pilih Login: Google / WA OTP])
+                    UC_Menu([Lihat Menu & Kategori])
+                    UC_Cart([Kelola Keranjang / Cart])
+                    UC_Order([Pesan via QR Meja / Takeaway])
+                    UC_Track([Lacak Pesanan Real-time])
+                    UC_History([Lihat Riwayat Pesanan])
+                    UC_Fav([Simpan Item Favorit])
+                    UC_Voucher([Gunakan Voucher])
+                end
+
+                Customer --> UC_ScanQR
+                UC_ScanQR -.->|lanjut ke| UC_Menu
+                Customer --> UC_Login
+                UC_Login -.->|extend| UC_LoginType
+                Customer --> UC_Menu
+                Customer --> UC_Cart
+                Customer --> UC_Order
+                Customer --> UC_Track
+                Customer --> UC_History
+                Customer --> UC_Fav
+                
+                UC_Order -.->|include| UC_Cart
+                UC_Order -.->|extend| UC_Voucher
+        </div>
+    </div>
+</body>
+
+</html>

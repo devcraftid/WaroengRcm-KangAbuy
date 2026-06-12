@@ -11,18 +11,19 @@ import useAuthStore from '../../stores/authStore'
 import { formatCurrency } from '../../utils/format'
 import { toast } from 'sonner'
 import { useNavigate, Link } from 'react-router-dom'
+import { playOrderNewSound } from '../../utils/sound'
 
 export default function Checkout() {
-  const { items, getTotal, clearCart, tableId, setTableId } = useCartStore()
+  const { items, getTotal, clearCart, tableId, setTableId, guestName, guestPhone, guestNotes } = useCartStore()
   const { user, profile } = useAuthStore()
   const navigate = useNavigate()
   const total = getTotal()
 
-  const [customerName, setCustomerName] = useState(profile?.full_name || '')
-  const [customerPhone, setCustomerPhone] = useState(profile?.phone || '')
+  const [customerName, setCustomerName] = useState(profile?.full_name || guestName || '')
+  const [customerPhone, setCustomerPhone] = useState(profile?.phone || guestPhone || '')
   const [tableNumber, setTableNumber] = useState(tableId || '')
   const [orderTypeState, setOrderTypeState] = useState('dine_in')
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState(guestNotes || '')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   
   const [qrisImage, setQrisImage] = useState(null)
@@ -96,6 +97,8 @@ export default function Checkout() {
         .from('orders')
         .insert({
           customer_id: user?.id || null,
+          customer_name: customerName.trim() || null,
+          customer_phone: customerPhone.trim() || null,
           table_number: orderTypeState === 'dine_in' ? tableNumber.trim() : null,
           order_type: orderTypeState,
           status: 'pending', // SELALU PENDING DULU
@@ -165,11 +168,11 @@ export default function Checkout() {
           .eq('table_number', tableNumber.trim())
       }
 
-      // 5. NOTIFIKASI KE KASIR/ADMIN
+      // 5. NOTIFIKASI KE KASIR/ADMIN (sertakan nama pemesan)
       await supabase.from('notifications').insert({
         user_id: null, // Untuk semua staff
         title: 'Order Baru! 🔔',
-        message: `Order #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod.toUpperCase()}. Perlu validasi pembayaran.`,
+        message: `${customerName.trim()} - Order #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod.toUpperCase()}${orderTypeState === 'dine_in' ? ` - Meja ${tableNumber}` : ' - Takeaway'}. Perlu validasi pembayaran.`,
         type: 'order_created',
         link: `/cashier/payment/${order.id}`
       })
@@ -196,6 +199,8 @@ export default function Checkout() {
       setOrderData(order)
       setOrderComplete(true)
       clearCart()
+      // Suara konfirmasi untuk customer
+      playOrderNewSound()
       toast.success('Pesanan dibuat! Silakan lakukan pembayaran.')
 
     } catch (error) {

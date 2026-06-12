@@ -10,6 +10,7 @@ import { formatCurrency, formatDateTime, getStatusColor, getOrderTypeLabel } fro
 import { useRealtimeOrders } from '../../hooks/useRealtime'
 import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
+import { playOrderNewSound, playOrderProcessingSound, playOrderCompletedSound } from '../../utils/sound'
 
 export default function CashierOrders() {
   const { profile } = useAuthStore()
@@ -21,14 +22,20 @@ export default function CashierOrders() {
   const [showDetail, setShowDetail] = useState(false)
 
   useEffect(() => { loadOrders() }, [])
-  useRealtimeOrders(() => loadOrders())
+  useRealtimeOrders((payload) => {
+    // Play suara pesanan baru saat ada INSERT
+    if (payload?.eventType === 'INSERT') {
+      playOrderNewSound()
+    }
+    loadOrders()
+  })
 
   const loadOrders = async () => {
     try {
-      // Ambil order dengan payment
+      // Ambil order dengan payment dan customer_name
       const { data, error } = await supabase
         .from('orders')
-        .select('*, customer:profiles!customer_id(full_name)')
+        .select('*, customer:profiles!customer_id(full_name, phone)')
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -46,7 +53,10 @@ export default function CashierOrders() {
           
           return {
             ...order,
-            payments: payments || []
+            payments: payments || [],
+            // Nama tampil: dari profil (login) atau dari field order (guest)
+            display_name: order.customer?.full_name || order.customer_name || 'Guest',
+            display_phone: order.customer?.phone || order.customer_phone || null,
           }
         })
       )
@@ -63,7 +73,9 @@ export default function CashierOrders() {
   const filteredOrders = orders.filter(order => {
     const matchSearch = !searchQuery || 
       order.id.slice(0, 8).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.table_number?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchStatus = statusFilter === 'all' || order.status === statusFilter
     return matchSearch && matchStatus
@@ -112,6 +124,9 @@ export default function CashierOrders() {
       }
 
       toast.success(`Order #${orderId.slice(0,8)} → ${newStatus}`)
+      // Play suara sesuai status baru
+      if (newStatus === 'processing') playOrderProcessingSound()
+      else if (newStatus === 'ready' || newStatus === 'completed') playOrderCompletedSound()
       loadOrders()
     } catch (error) {
       toast.error('Gagal update status')
@@ -249,7 +264,7 @@ export default function CashierOrders() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs">{order.customer?.full_name || 'Guest'}</p>
+                      <p className="text-xs">{order.display_name}</p>
                       <p className="text-xs text-gray-400">{getOrderTypeLabel(order.order_type)}</p>
                       <span className={`inline-flex items-center text-xs px-1.5 py-0.5 rounded-full ${payInfo.color}`}>
                         <PayIcon className="w-2.5 h-2.5 mr-0.5" />{payInfo.label}
@@ -300,7 +315,7 @@ export default function CashierOrders() {
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-semibold text-gray-700 mr-2">{order.customer?.full_name || 'Guest'}</span>
+                    <span className="text-sm font-semibold text-gray-700 mr-2">{order.display_name}</span>
                     <button onClick={() => handleViewDetail(order)} className="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"><Eye className="w-4 h-4" /></button>
                     <button onClick={() => handlePrint(order)} className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"><Printer className="w-4 h-4" /></button>
                     
@@ -362,16 +377,25 @@ export default function CashierOrders() {
 
               <div className="space-y-2 text-sm">
                 <p>Status: <span className={getStatusColor(selectedOrder.status)}>{selectedOrder.status}</span></p>
-                <p>Customer: {selectedOrder.customer?.full_name || 'Guest'}</p>
+                <p>Customer: <strong>{selectedOrder.display_name}</strong></p>
+                {selectedOrder.display_phone && <p className="text-gray-500">📞 {selectedOrder.display_phone}</p>}
                 <p>Tipe: {getOrderTypeLabel(selectedOrder.order_type)}</p>
                 <p>Tgl: {formatDateTime(selectedOrder.created_at)}</p>
                 {selectedOrder.table_number && <p>Meja: {selectedOrder.table_number}</p>}
+                {selectedOrder.notes && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 mt-1">
+                    <p className="text-xs font-semibold text-amber-700 mb-0.5">📝 Catatan Pesanan</p>
+                    <p className="text-xs text-amber-800">{selectedOrder.notes}</p>
+                  </div>
+                )}
+                <div className="border-t pt-2">
                 {selectedOrder.items?.map(item => (
                   <div key={item.id} className="flex justify-between py-1 border-b">
                     <span>{item.menus?.name} x{item.quantity}</span>
                     <span>{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
+                </div>
                 <div className="flex justify-between font-bold text-lg pt-2">
                   <span>Total</span><span className="text-orange-600">{formatCurrency(selectedOrder.total_amount)}</span>
                 </div>

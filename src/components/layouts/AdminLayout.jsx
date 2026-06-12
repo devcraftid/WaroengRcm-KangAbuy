@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -27,6 +27,8 @@ import {
   Store
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
+import { supabase } from '../../lib/supabase'
+import { playNotificationByType } from '../../utils/sound'
 
 const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -186,7 +188,7 @@ export default function AdminLayout() {
               className="relative p-2 rounded-lg hover:bg-gray-100"
             >
               <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <AdminNotificationBadge />
             </Link>
           </div>
         </header>
@@ -197,5 +199,51 @@ export default function AdminLayout() {
         </main>
       </div>
     </div>
+  )
+}
+
+// ============================================
+// AdminNotificationBadge Component
+// ============================================
+function AdminNotificationBadge() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    loadUnreadCount()
+
+    const channel = supabase
+      .channel('admin-notifications-badge')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications'
+      }, (payload) => {
+        loadUnreadCount()
+        // Play suara sesuai tipe
+        if (payload?.new?.type) {
+          playNotificationByType(payload.new.type)
+        }
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [])
+
+  const loadUnreadCount = async () => {
+    try {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_read', false)
+      setCount(count || 0)
+    } catch (_) {}
+  }
+
+  if (count === 0) return null
+
+  return (
+    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+      {count > 99 ? '99+' : count}
+    </span>
   )
 }

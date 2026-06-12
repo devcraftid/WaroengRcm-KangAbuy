@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waroeng RCM - Activity Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; background: #f9fafb; color: #111827; }
+        .diagram-container { background: white; padding: 1.5rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        h1, h2 { color: #1f2937; }
+        .mermaid { display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+    <h1>Diagram Activity - Waroeng RCM Kang Abuy</h1>
+    
+    <div class="diagram-container">
+        <h2>1. Activity Diagram: Pemesanan oleh Pelanggan (Customer Order Flow)</h2>
+        <div class="mermaid">
+            stateDiagram-v2
+                [*] --> Mulai
+                Mulai --> PilihMetodePesan
+                
+                state PilihMetodePesan {
+                    direction LR
+                    DineIn --> ScanQRMeja
+                    Takeaway --> DatangKeKasirAtauBukaWeb
+                }
+                
+                PilihMetodePesan --> BukaAplikasiWeb
+                BukaAplikasiWeb --> LihatMenu
+                LihatMenu --> PilihItem
+                PilihItem --> MasukkanKeKeranjang
+                
+                state check_cart <<choice>>
+                MasukkanKeKeranjang --> check_cart
+                check_cart --> LihatMenu : Tambah item lain
+                check_cart --> Checkout : Selesai memilih
+                
+                Checkout --> LoginAtauGuest
+                LoginAtauGuest --> PilihMetodePembayaran
+                
+                state check_payment <<choice>>
+                PilihMetodePembayaran --> check_payment
+                check_payment --> BayarQRIS : Pilih QRIS
+                check_payment --> BayarTunai : Pilih Tunai (Kasir)
+                
+                BayarQRIS --> SistemVerifikasiPembayaran
+                SistemVerifikasiPembayaran --> PesananMasukSistem : Berhasil
+                BayarTunai --> KasirVerifikasiPembayaran
+                KasirVerifikasiPembayaran --> PesananMasukSistem : Kasir Input POS
+                
+                PesananMasukSistem --> PantauStatusPesanan
+                PantauStatusPesanan --> PesananSelesai
+                PesananSelesai --> [*]
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. Activity Diagram: Kasir Memproses Pesanan (Cashier POS Flow)</h2>
+        <div class="mermaid">
+            stateDiagram-v2
+                [*] --> LoginKasir
+                LoginKasir --> BukaDashboardPOS
+                BukaDashboardPOS --> TerimaPesanan
+                
+                state check_order_type <<choice>>
+                TerimaPesanan --> check_order_type
+                check_order_type --> OrderDariPelangganWeb : Otomatis Masuk
+                check_order_type --> OrderLangsung : Input Manual POS
+                
+                OrderLangsung --> PilihMenuDiPOS
+                PilihMenuDiPOS --> ProsesCheckoutPOS
+                
+                ProsesCheckoutPOS --> TerimaPembayaran
+                OrderDariPelangganWeb --> TerimaPembayaran : Jika tunai
+                
+                TerimaPembayaran --> VerifikasiPembayaran
+                VerifikasiPembayaran --> UbahStatusPesanan
+                UbahStatusPesanan --> CetakStruk
+                CetakStruk --> [*]
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>3. Activity Diagram: Daily Closing (Tutup Kasir)</h2>
+        <div class="mermaid">
+            stateDiagram-v2
+                [*] --> MulaiClosing
+                MulaiClosing --> HitungUangLaci
+                HitungUangLaci --> BukaMenuClosing
+                BukaMenuClosing --> InputTotalUangFisik
+                
+                InputTotalUangFisik --> SistemCocokkanData
+                
+                state check_balance <<choice>>
+                SistemCocokkanData --> check_balance
+                check_balance --> TulisCatatanSelisih : Tidak Sesuai (Selisih)
+                check_balance --> KonfirmasiClosing : Sesuai (Balance)
+                TulisCatatanSelisih --> KonfirmasiClosing
+                
+                KonfirmasiClosing --> CetakLaporanHarian
+                CetakLaporanHarian --> SesiKasirBerakhir
+                SesiKasirBerakhir --> [*]
+        </div>
+    </div>
+</body>
+</html>

@@ -86,6 +86,8 @@ CREATE TABLE orders (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   customer_id UUID REFERENCES profiles(id),
   cashier_id UUID REFERENCES profiles(id),
+  customer_name TEXT,        -- Nama pemesan untuk guest (tidak login)
+  customer_phone TEXT,       -- No. WhatsApp pemesan untuk guest
   table_number TEXT,
   order_type TEXT CHECK (order_type IN ('dine_in', 'takeaway_waiting', 'takeaway_pickup')) DEFAULT 'dine_in',
   status TEXT CHECK (status IN ('pending', 'processing', 'ready', 'completed', 'cancelled')) DEFAULT 'pending',

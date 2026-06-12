@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingBag, UtensilsCrossed, Plus, Minus, Trash2,
   ShoppingCart, ArrowLeft, QrCode, MapPin, Clock, Star,
-  Search, Package
+  Search, Package, User, Phone, FileText, ChevronRight
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useCartStore from '../../stores/cartStore'
@@ -16,6 +16,8 @@ export default function QRTableOrder() {
   const navigate = useNavigate()
   const tableNumber = searchParams.get('table') || ''
 
+  const { setGuestInfo, guestName, guestPhone, guestNotes } = useCartStore()
+
   const [menus, setMenus] = useState([])
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -25,15 +27,38 @@ export default function QRTableOrder() {
   const [showCart, setShowCart] = useState(false)
   const [tableInfo, setTableInfo] = useState(null)
 
+  // === GUEST INFO MODAL ===
+  const [showGuestModal, setShowGuestModal] = useState(false)
+  const [inputName, setInputName] = useState(guestName || '')
+  const [inputPhone, setInputPhone] = useState(guestPhone || '')
+  const [inputNotes, setInputNotes] = useState(guestNotes || '')
+
   useEffect(() => {
     if (tableNumber) {
       loadTableInfo()
-      // Set table di cart store
       useCartStore.getState().setTableId(tableNumber)
       useCartStore.getState().setOrderType('dine_in')
     }
     loadMenus()
+    // Tampilkan modal jika belum ada nama
+    if (!guestName) {
+      setShowGuestModal(true)
+    }
   }, [tableNumber])
+
+  const handleSaveGuestInfo = () => {
+    if (!inputName.trim()) {
+      toast.error('Nama wajib diisi!')
+      return
+    }
+    if (!inputPhone.trim()) {
+      toast.error('Nomor WhatsApp wajib diisi!')
+      return
+    }
+    setGuestInfo({ name: inputName.trim(), phone: inputPhone.trim(), notes: inputNotes.trim() })
+    setShowGuestModal(false)
+    toast.success(`Halo, ${inputName.trim()}! Silakan pilih menu 😊`)
+  }
 
   const loadTableInfo = async () => {
     try {
@@ -45,7 +70,6 @@ export default function QRTableOrder() {
       
       if (data) {
         setTableInfo(data)
-        // Update status meja ke occupied
         if (data.status === 'available') {
           await supabase.from('tables').update({ status: 'occupied' }).eq('id', data.id)
         }
@@ -78,6 +102,7 @@ export default function QRTableOrder() {
   })
 
   const addToCart = (menu) => {
+    if (showGuestModal) return
     setCart(prev => {
       const existing = prev.find(i => i.id === menu.id)
       if (existing) return prev.map(i => i.id === menu.id ? { ...i, quantity: i.quantity + 1 } : i)
@@ -94,6 +119,10 @@ export default function QRTableOrder() {
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   const handleOrder = () => {
+    if (!guestName) {
+      setShowGuestModal(true)
+      return
+    }
     // Simpan cart ke store dan redirect ke checkout
     const cartStore = useCartStore.getState()
     cart.forEach(item => {
@@ -104,7 +133,6 @@ export default function QRTableOrder() {
         image_url: item.image_url,
         description: item.description
       })
-      // Set quantity
       for (let i = 1; i < item.quantity; i++) {
         cartStore.addItem({
           id: item.id,
@@ -135,6 +163,107 @@ export default function QRTableOrder() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* ============================================ */}
+      {/* MODAL GUEST INFO */}
+      {/* ============================================ */}
+      <AnimatePresence>
+        {showGuestModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto"
+            >
+              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 text-white text-center">
+                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <UtensilsCrossed className="w-8 h-8" />
+                  </div>
+                  <h2 className="text-xl font-bold">Selamat Datang! 👋</h2>
+                  <p className="text-orange-100 text-sm mt-1">Meja {tableNumber}</p>
+                </div>
+
+                {/* Form */}
+                <div className="p-5 space-y-4">
+                  <p className="text-sm text-gray-500 text-center">
+                    Isi info berikut agar kasir tahu pesanan kamu
+                  </p>
+
+                  {/* Nama */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Nama Kamu <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={inputName}
+                        onChange={e => setInputName(e.target.value)}
+                        placeholder="Contoh: Budi"
+                        autoFocus
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* No. HP */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                      No. WhatsApp <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={inputPhone}
+                        onChange={e => setInputPhone(e.target.value)}
+                        placeholder="0812-3456-7890"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Catatan */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Catatan Pesanan <span className="text-gray-400 font-normal normal-case">(opsional)</span>
+                    </label>
+                    <div className="relative">
+                      <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
+                      <textarea
+                        value={inputNotes}
+                        onChange={e => setInputNotes(e.target.value)}
+                        placeholder="Misal: tidak pedas, alergi seafood..."
+                        rows={2}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm resize-none focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveGuestInfo}
+                    className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all active:scale-95"
+                  >
+                    Mulai Pesan
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white sticky top-0 z-20">
         <div className="px-4 py-3">
@@ -148,19 +277,41 @@ export default function QRTableOrder() {
                 <MapPin className="w-3 h-3 mr-1" />
                 Meja: {tableNumber}
                 {tableInfo && <span className="ml-2">· Kapasitas: {tableInfo.capacity} orang</span>}
+                {guestName && (
+                  <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                    👤 {guestName}
+                  </span>
+                )}
               </p>
             </div>
-            <button
-              onClick={() => setShowCart(true)}
-              className="relative p-2 bg-white/20 rounded-lg"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cart.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                  {cart.reduce((s, i) => s + i.quantity, 0)}
-                </span>
+            <div className="flex items-center space-x-2">
+              {/* Edit info button */}
+              {guestName && (
+                <button
+                  onClick={() => {
+                    setInputName(guestName)
+                    setInputPhone(guestPhone)
+                    setInputNotes(guestNotes)
+                    setShowGuestModal(true)
+                  }}
+                  className="p-2 bg-white/20 rounded-lg text-xs"
+                  title="Edit info pemesan"
+                >
+                  <User className="w-4 h-4" />
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setShowCart(true)}
+                className="relative p-2 bg-white/20 rounded-lg"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {cart.reduce((s, i) => s + i.quantity, 0)}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Search */}
@@ -274,6 +425,29 @@ export default function QRTableOrder() {
               <div className="w-16"></div>
             </div>
 
+            {/* Guest info summary */}
+            {guestName && (
+              <div className="mx-4 mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-orange-700">👤 {guestName}</p>
+                  <p className="text-xs text-orange-600">{guestPhone}</p>
+                  {guestNotes && <p className="text-xs text-orange-500 mt-0.5">📝 {guestNotes}</p>}
+                </div>
+                <button
+                  onClick={() => {
+                    setInputName(guestName)
+                    setInputPhone(guestPhone)
+                    setInputNotes(guestNotes)
+                    setShowCart(false)
+                    setShowGuestModal(true)
+                  }}
+                  className="text-xs text-orange-600 underline"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4">
               {cart.length === 0 ? (
@@ -328,7 +502,7 @@ export default function QRTableOrder() {
                   onClick={handleOrder}
                   className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-bold text-base hover:shadow-lg transition-all"
                 >
-                  Pesan Sekarang
+                  Konfirmasi Pesanan
                 </button>
               </div>
             )}
@@ -338,3 +512,4 @@ export default function QRTableOrder() {
     </div>
   )
 }
+

@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laporan Kerja Praktek – Website Menu Digital Berbasis QR Code untuk Warung RCM Kang Abuy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+  <style>
+    /* ===== GLOBAL RESET & TYPOGRAPHY ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: #000;
+      background: #fff;
+    }
+
+    /* ===== PRINT SETTINGS ===== */
+    @media print {
+      .no-print { display: none !important; }
+      body { font-size: 12pt; }
+      .page-break { page-break-after: always; break-after: page; }
+      .page-break-before { page-break-before: always; break-before: page; }
+      table { page-break-inside: avoid; }
+      .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+    }
+
+    /* ===== NAVIGATION BAR (screen only) ===== */
+    .nav-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: #1e293b; color: #fff;
+      display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+      font-family: 'Segoe UI', sans-serif; font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .nav-bar .logo { font-weight: 700; font-size: 15px; color: #f97316; }
+    .nav-bar select {
+      background: #334155; color: #fff; border: 1px solid #475569;
+      padding: 4px 8px; border-radius: 4px; font-size: 12px;
+    }
+    .nav-bar button {
+      background: #f97316; color: #fff; border: none;
+      padding: 6px 16px; border-radius: 6px; cursor: pointer;
+      font-weight: 600; font-size: 12px;
+    }
+    .nav-bar button:hover { background: #ea580c; }
+    .nav-spacer { flex: 1; }
+    @media print { .nav-bar { display: none; } }
+
+    /* ===== DOCUMENT CONTAINER ===== */
+    .document {
+      max-width: 210mm;
+      margin: 70px auto 40px auto;
+      background: #fff;
+      box-shadow: 0 0 30px rgba(0,0,0,0.15);
+    }
+    @media print {
+      .document { margin: 0; max-width: none; box-shadow: none; }
+    }
+
+    /* ===== PAGE ===== */
+    .page {
+      padding: 3cm 3cm 2.5cm 4cm;
+      min-height: 29.7cm;
+      position: relative;
+    }
+    @media print {
+      .page { padding: 3cm 3cm 2.5cm 4cm; min-height: 29.7cm; }
+    }
+
+    /* ===== COVER PAGE ===== */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 2.5cm 3cm;
+      min-height: 29.7cm;
+      justify-content: space-between;
+    }
+    .cover .logo-kampus {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      border: 3px solid #1e3a5f;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 900; color: #1e3a5f;
+      margin: 0 auto 12px auto;
+    }
+    .cover-title {
+      font-size: 16pt; font-weight: bold; text-transform: uppercase;
+      margin: 8px 0;
+    }
+    .cover-subtitle {
+      font-size: 14pt; font-weight: bold;
+      text-transform: uppercase; margin: 4px 0;
+    }
+    .cover-line { border-top: 3px double #000; width: 80%; margin: 10px auto; }
+    .cover h1 { font-size: 15pt; font-weight: bold; line-height: 1.5; margin: 12px 0; }
+    .cover h2 { font-size: 12pt; font-weight: normal; margin: 4px 0; }
+    .cover-meta { font-size: 12pt; margin: 4px 0; }
+    .cover-footer { font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+
+    /* ===== HEADINGS ===== */
+    h1.bab {
+      font-size: 14pt; font-weight: bold;
+      text-transform: uppercase; text-align: center;
+      margin-bottom: 20px;
+    }
+    h2.sub-bab {
+      font-size: 12pt; font-weight: bold;
+      margin: 20px 0 10px 0;
+    }
+    h3.sub-sub-bab {
+      font-size: 12pt; font-weight: bold;
+      margin: 16px 0 8px 0;
+    }
+
+    /* ===== PARAGRAPHS ===== */
+    p {
+      text-align: justify;
+      margin-bottom: 10px;
+      text-indent: 1cm;
+    }
+    p.no-indent { text-indent: 0; }
+
+    /* ===== LISTS ===== */
+    ol, ul {
+      margin: 8px 0 12px 2cm;
+      line-height: 1.8;
+    }
+    li { margin-bottom: 4px; }
+
+    /* ===== TABLES ===== */
+    .table-wrapper {
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+    .table-caption {
+      font-weight: bold; text-align: center;
+      margin-bottom: 6px; font-size: 11pt;
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 11pt;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f0f0;
+      font-weight: bold;
+      text-align: center;
+    }
+    td.center { text-align: center; }
+    td.bold { font-weight: bold; }
+
+    /* ===== FIGURES ===== */
+    .figure {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .figure-caption {
+      font-size: 11pt;
+      margin-top: 8px;
+      font-style: italic;
+    }
+    .mermaid-wrap {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    .mermaid { display: flex; justify-content: center; }
+
+    /* ===== SPECIAL SECTIONS ===== */
+    .lembar-header {
+      text-align: center; margin-bottom: 24px;
+    }
+    .tanda-tangan {
+      display: flex; justify-content: space-around;
+      margin-top: 40px; text-align: center;
+    }
+    .tanda-tangan .ttd-box { width: 200px; }
+    .ttd-line {
+      border-bottom: 1px solid #000;
+      margin: 60px 0 4px 0;
+    }
+    .abstrak-title {
+      font-size: 14pt; font-weight: bold;
+      text-align: center; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .keyword { font-weight: bold; }
+
+    /* ===== DAFTAR ISI ===== */
+    .daftar-isi table { border: none; }
+    .daftar-isi td, .daftar-isi th { border: none; padding: 3px 6px; }
+    .daftar-isi td:last-child { text-align: right; min-width: 40px; }
+    .daftar-isi .section-header { font-weight: bold; }
+    .dots { color: #999; }
+
+    /* ===== HIGHLIGHT BOX ===== */
+    .info-box {
+      border-left: 4px solid #f97316;
+      background: #fff7ed;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 11pt;
+    }
+    .flowchart-box {
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0;
+    }
+    .flow-node {
+      border: 2px solid #1e3a5f;
+      background: #e8f0fe;
+      padding: 8px 24px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 11pt;
+      text-align: center;
+      min-width: 220px;
+    }
+    .flow-node.oval {
+      border-radius: 50px;
+      background: #1e3a5f;
+      color: #fff;
+    }
+    .flow-node.diamond {
+      background: #fef9c3;
+      border-color: #b45309;
+      transform: rotate(0deg);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+      height: 70px; width: 220px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .flow-arrow {
+      font-size: 20px; line-height: 1; color: #1e3a5f; margin: 0;
+    }
+    .flow-label { font-size: 10pt; color: #555; margin: -4px 0; }
+
+    /* ===== KATA PENGANTAR & MISC ===== */
+    .section-title-roman {
+      font-size: 14pt; font-weight: bold;
+      text-align: center; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .indent { margin-left: 1cm; }
+    .bold { font-weight: bold; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .mt10 { margin-top: 10px; }
+    .mt20 { margin-top: 20px; }
+    .mt30 { margin-top: 30px; }
+
+    /* ===== PLACEHOLDER STYLING ===== */
+    .placeholder {
+      background: #fef9c3;
+      border: 1px dashed #d97706;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-style: italic;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION BAR ===== -->
+<nav class="nav-bar no-print">
+  <span class="logo">📋 Laporan KP</span>
+  <span>Waroeng RCM Kang Abuy</span>
+  <span class="nav-spacer"></span>
+  <span style="color:#94a3b8;font-size:11px;">⚠️ Ganti teks <span style="background:#fef9c3;color:#92400e;padding:1px 4px;border-radius:3px;">berwarna kuning</span> dengan data Anda</span>
+  <button onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+</nav>
+
+<div class="document">
+
+<!-- ================================================================ -->
+<!-- HALAMAN JUDUL                                                     -->
+<!-- ================================================================ -->
+<div class="page cover page-break">
+  <div>
+    <div class="logo-kampus">🎓</div>
+    <div class="cover-title"><span class="placeholder">[NAMA UNIVERSITAS/INSTITUSI]</span></div>
+    <div class="cover-subtitle">Fakultas <span class="placeholder">[Nama Fakultas]</span></div>
+    <div class="cover-subtitle">Program Studi <span class="placeholder">[Nama Program Studi]</span></div>
+  </div>
+
+  <div>
+    <div class="cover-line"></div>
+    <h1>LAPORAN KERJA PRAKTEK</h1>
+    <div class="cover-line"></div>
+    <br>
+    <h1 style="font-size:14pt;">
+      WEBSITE MENU DIGITAL BERBASIS QR CODE<br>
+      UNTUK WARUNG RCM KANG ABUY
+    </h1>
+  </div>
+
+  <div>
+    <p class="no-indent center">Disusun oleh:</p>
+    <br>
+    <p class="no-indent center bold" style="font-size:13pt;"><span class="placeholder">[NAMA MAHASISWA]</span></p>
+    <p class="no-indent center"><span class="placeholder">[NIM: XXXXXXXXXX]</span></p>
+  </div>
+
+  <div>
+    <p class="no-indent center">Diajukan kepada</p>
+    <p class="no-indent center bold"><span class="placeholder">[Nama Program Studi]</span></p>
+    <p class="no-indent center bold"><span class="placeholder">[Nama Fakultas]</span></p>
+    <p class="no-indent center bold"><span class="placeholder">[Nama Universitas]</span></p>
+    <p class="no-indent center bold">Sebagai Salah Satu Syarat Menyelesaikan Program Studi</p>
+  </div>
+
+  <div class="cover-footer">
+    <span class="placeholder">[NAMA KOTA]</span><br>
+    <span class="placeholder">[TAHUN]</span>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- LEMBAR PENGESAHAN                                                 -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <div class="lembar-header">
+    <h1 class="bab">LEMBAR PENGESAHAN</h1>
+    <p class="no-indent center bold" style="font-size:13pt;">LAPORAN KERJA PRAKTEK</p>
+    <p class="no-indent center bold" style="font-size:13pt;">WEBSITE MENU DIGITAL BERBASIS QR CODE UNTUK WARUNG RCM KANG ABUY</p>
+  </div>
+
+  <p class="no-indent">Laporan Kerja Praktek ini telah diperiksa dan disetujui oleh:</p>
+
+  <div class="tanda-tangan">
+    <div class="ttd-box">
+      <p class="no-indent center">Pembimbing Lapangan</p>
+      <div class="ttd-line"></div>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Pembimbing Lapangan]</span></p>
+      <p class="no-indent center"><span class="placeholder">[Jabatan]</span></p>
+    </div>
+    <div class="ttd-box">
+      <p class="no-indent center">Dosen Pembimbing</p>
+      <div class="ttd-line"></div>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Dosen Pembimbing]</span></p>
+      <p class="no-indent center"><span class="placeholder">[NIP/NIDN]</span></p>
+    </div>
+  </div>
+
+  <br><br>
+  <p class="no-indent center">Mengetahui,</p>
+  <div class="tanda-tangan">
+    <div class="ttd-box">
+      <p class="no-indent center">Ketua Program Studi</p>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Prodi]</span></p>
+      <div class="ttd-line"></div>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Kaprodi]</span></p>
+      <p class="no-indent center"><span class="placeholder">[NIP/NIDN]</span></p>
+    </div>
+    <div class="ttd-box">
+      <p class="no-indent center">Pimpinan UMKM</p>
+      <p class="no-indent center bold">Warung RCM Kang Abuy</p>
+      <div class="ttd-line"></div>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Pemilik]</span></p>
+      <p class="no-indent center">Pemilik</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- LEMBAR PENILAIAN                                                  -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="bab">LEMBAR PENILAIAN</h1>
+
+  <p>Laporan Kerja Praktek berikut:</p>
+  <br>
+  <table style="width:80%;border:none;">
+    <tr>
+      <td style="border:none;width:40%;">Nama</td>
+      <td style="border:none;width:5%;">:</td>
+      <td style="border:none;"><span class="placeholder">[Nama Mahasiswa]</span></td>
+    </tr>
+    <tr>
+      <td style="border:none;">NIM</td>
+      <td style="border:none;">:</td>
+      <td style="border:none;"><span class="placeholder">[NIM]</span></td>
+    </tr>
+    <tr>
+      <td style="border:none;">Program Studi</td>
+      <td style="border:none;">:</td>
+      <td style="border:none;"><span class="placeholder">[Program Studi]</span></td>
+    </tr>
+    <tr>
+      <td style="border:none;">Tempat KP</td>
+      <td style="border:none;">:</td>
+      <td style="border:none;">Warung RCM Kang Abuy</td>
+    </tr>
+    <tr>
+      <td style="border:none;">Judul</td>
+      <td style="border:none;">:</td>
+      <td style="border:none;">Website Menu Digital Berbasis QR Code untuk Warung RCM Kang Abuy</td>
+    </tr>
+    <tr>
+      <td style="border:none;">Periode KP</td>
+      <td style="border:none;">:</td>
+      <td style="border:none;"><span class="placeholder">[Tanggal Mulai] s.d. [Tanggal Selesai]</span></td>
+    </tr>
+  </table>
+  <br>
+  <p>Telah dinilai dengan hasil:</p>
+  <br>
+
+  <div class="table-wrapper">
+    <table style="width:80%;">
+      <thead>
+        <tr>
+          <th style="width:10%;">No</th>
+          <th>Aspek Penilaian</th>
+          <th style="width:20%;">Nilai (0–100)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>Penguasaan Materi</td>
+          <td class="center"></td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td>Kualitas Laporan</td>
+          <td class="center"></td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td>Kualitas Produk/Sistem</td>
+          <td class="center"></td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td>Kehadiran & Kedisiplinan</td>
+          <td class="center"></td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td>Sikap & Komunikasi</td>
+          <td class="center"></td>
+        </tr>
+        <tr>
+          <td colspan="2" class="bold">Nilai Rata-Rata</td>
+          <td class="center"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tanda-tangan" style="margin-top:60px;">
+    <div class="ttd-box">
+      <p class="no-indent center"><span class="placeholder">[Kota]</span>, <span class="placeholder">[Tanggal]</span></p>
+      <p class="no-indent center">Penilai</p>
+      <div class="ttd-line"></div>
+      <p class="no-indent center bold"><span class="placeholder">[Nama Penilai]</span></p>
+      <p class="no-indent center"><span class="placeholder">[NIP/NIDN]</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- ABSTRAK                                                           -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <p class="abstrak-title">ABSTRAK</p>
+
+  <p>Warung RCM Kang Abuy merupakan usaha mikro kecil dan menengah (UMKM) yang bergerak di bidang kuliner dan berlokasi di <span class="placeholder">[Nama Kota/Lokasi]</span>. Permasalahan yang dihadapi oleh warung ini adalah proses pemesanan yang masih dilakukan secara manual, yaitu pelanggan harus memanggil pelayan untuk melihat menu berbasis kertas dan mencatat pesanan. Kondisi tersebut menyebabkan antrian, ketidakefisienan pelayanan, dan potensi kesalahan pencatatan pesanan, terutama pada jam sibuk.</p>
+
+  <p>Penelitian ini bertujuan untuk merancang dan membangun sebuah <em>website menu digital berbasis QR Code</em> yang memungkinkan pelanggan memindai kode QR pada meja masing-masing, melihat menu secara digital, melakukan pemesanan mandiri (<em>self-ordering</em>), serta memantau status pesanan secara <em>real-time</em>. Selain itu, sistem juga menyediakan dasbor manajemen bagi pemilik (admin) dan kasir untuk mengelola menu, kategori, transaksi, meja, pembayaran, serta laporan keuangan.</p>
+
+  <p>Metode pengembangan yang digunakan adalah <em>System Development Life Cycle</em> (SDLC) dengan pendekatan <em>waterfall</em>. Sistem dibangun menggunakan teknologi <em>React.js 18</em> dan <em>Vite</em> sebagai <em>frontend framework</em>, <em>Tailwind CSS</em> untuk antarmuka pengguna, serta <em>Supabase</em> (berbasis <em>PostgreSQL</em>) sebagai <em>backend-as-a-service</em> yang menyediakan database, autentikasi, penyimpanan file, dan fitur <em>real-time</em>. Aplikasi di-<em>deploy</em> menggunakan layanan <em>Vercel</em>.</p>
+
+  <p>Hasil pengujian menggunakan metode <em>Black Box Testing</em> menunjukkan bahwa seluruh fitur utama sistem berjalan sesuai dengan yang diharapkan. Sistem berhasil meningkatkan efisiensi pelayanan dengan mengurangi antrian manual dan mempercepat proses pemesanan hingga pelanggan dapat melakukan pemesanan secara mandiri hanya dalam waktu kurang dari dua menit. Sistem ini diharapkan dapat menjadi solusi digital yang berkelanjutan bagi Warung RCM Kang Abuy dalam menghadapi era transformasi digital UMKM.</p>
+
+  <br>
+  <p class="no-indent"><span class="keyword">Kata Kunci:</span> Website Menu Digital, QR Code, Self-Ordering, Sistem Informasi Restoran, React.js, Supabase, UMKM.</p>
+
+  <br><br>
+  <p class="abstrak-title" style="font-size:13pt;">ABSTRACT</p>
+  <p>Warung RCM Kang Abuy is a small and medium-sized enterprise (SME) operating in the culinary sector. The main problem faced is a manual ordering process where customers need to call the waiter, view a paper-based menu, and have their orders written down, causing inefficiency during rush hours. This study aims to design and build a QR Code-based digital menu website enabling customers to scan a QR code at their table, browse the digital menu, self-order, and track orders in real-time. The system was developed using React.js 18, Vite, Tailwind CSS, and Supabase (PostgreSQL) with waterfall SDLC methodology. Black Box Testing results show all major features work as expected, with the system successfully reducing manual queues and improving service efficiency.</p>
+  <br>
+  <p class="no-indent"><span class="keyword">Keywords:</span> Digital Menu Website, QR Code, Self-Ordering, Restaurant Information System, React.js, Supabase, SME.</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- KATA PENGANTAR                                                    -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="section-title-roman">KATA PENGANTAR</h1>
+
+  <p>Puji dan syukur penulis panjatkan ke hadirat Allah SWT atas segala rahmat dan karunia-Nya, sehingga penulis dapat menyelesaikan Laporan Kerja Praktek yang berjudul <strong>"Website Menu Digital Berbasis QR Code untuk Warung RCM Kang Abuy"</strong> ini dengan baik dan tepat waktu.</p>
+
+  <p>Laporan ini disusun sebagai salah satu syarat untuk menyelesaikan mata kuliah Kerja Praktek pada Program Studi <span class="placeholder">[Nama Program Studi]</span>, <span class="placeholder">[Nama Fakultas]</span>, <span class="placeholder">[Nama Universitas]</span>. Selain itu, laporan ini juga merupakan dokumentasi atas kegiatan yang telah penulis laksanakan selama menjalani Kerja Praktek di Warung RCM Kang Abuy.</p>
+
+  <p>Dalam proses penyusunan laporan ini, penulis telah banyak mendapatkan bantuan, bimbingan, dan dukungan dari berbagai pihak. Oleh karena itu, pada kesempatan ini penulis mengucapkan terima kasih yang sebesar-besarnya kepada:</p>
+
+  <ol>
+    <li>Bapak/Ibu <span class="placeholder">[Nama Ketua Program Studi]</span>, selaku Ketua Program Studi <span class="placeholder">[Nama Prodi]</span>;</li>
+    <li>Bapak/Ibu <span class="placeholder">[Nama Dosen Pembimbing]</span>, selaku Dosen Pembimbing Kerja Praktek yang telah memberikan bimbingan, masukan, dan arahan dalam pelaksanaan dan penyusunan laporan ini;</li>
+    <li>Bapak/Ibu <span class="placeholder">[Nama Pemilik Warung]</span>, selaku Pemilik Warung RCM Kang Abuy yang telah memberikan kesempatan dan kemudahan bagi penulis untuk melaksanakan Kerja Praktek;</li>
+    <li>Bapak/Ibu <span class="placeholder">[Nama Pembimbing Lapangan]</span>, selaku Pembimbing Lapangan yang telah memberikan arahan dan bimbingan selama pelaksanaan Kerja Praktek;</li>
+    <li>Seluruh staf dan karyawan Warung RCM Kang Abuy yang telah membantu dan menyambut dengan hangat selama penulis melaksanakan Kerja Praktek;</li>
+    <li>Orang tua dan keluarga yang selalu memberikan doa dan dukungan moril maupun materiil;</li>
+    <li>Seluruh teman-teman yang telah memberikan semangat dan dukungan dalam penyusunan laporan ini.</li>
+  </ol>
+
+  <p>Penulis menyadari bahwa laporan ini masih jauh dari sempurna. Oleh karena itu, penulis sangat mengharapkan kritik dan saran yang membangun dari pembaca demi perbaikan laporan di masa mendatang. Semoga laporan ini dapat memberikan manfaat bagi semua pihak yang berkepentingan.</p>
+
+  <br>
+  <div class="right">
+    <p class="no-indent"><span class="placeholder">[Kota]</span>, <span class="placeholder">[Tanggal Bulan Tahun]</span></p>
+    <br><br><br>
+    <p class="no-indent bold"><span class="placeholder">[Nama Penulis]</span></p>
+    <p class="no-indent"><span class="placeholder">[NIM]</span></p>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- DAFTAR ISI                                                        -->
+<!-- ================================================================ -->
+<div class="page page-break daftar-isi">
+  <h1 class="section-title-roman">DAFTAR ISI</h1>
+
+  <table>
+    <tr><td class="section-header">Halaman Judul</td><td class="dots">...........................</td><td>i</td></tr>
+    <tr><td class="section-header">Lembar Pengesahan</td><td class="dots">...........................</td><td>ii</td></tr>
+    <tr><td class="section-header">Lembar Penilaian</td><td class="dots">...........................</td><td>iii</td></tr>
+    <tr><td class="section-header">Abstrak</td><td class="dots">...........................</td><td>iv</td></tr>
+    <tr><td class="section-header">Kata Pengantar</td><td class="dots">...........................</td><td>v</td></tr>
+    <tr><td class="section-header">Daftar Isi</td><td class="dots">...........................</td><td>vi</td></tr>
+    <tr><td class="section-header">Daftar Tabel</td><td class="dots">...........................</td><td>vii</td></tr>
+    <tr><td class="section-header">Daftar Gambar</td><td class="dots">...........................</td><td>viii</td></tr>
+    <tr><td colspan="3"><br></td></tr>
+    <tr><td class="section-header">BAB I PENDAHULUAN</td><td></td><td></td></tr>
+    <tr><td>&nbsp;&nbsp;1.1 Latar Belakang</td><td class="dots">...........................</td><td>1</td></tr>
+    <tr><td>&nbsp;&nbsp;1.2 Rumusan Masalah</td><td class="dots">...........................</td><td>2</td></tr>
+    <tr><td>&nbsp;&nbsp;1.3 Tujuan Kerja Praktek</td><td class="dots">...........................</td><td>2</td></tr>
+    <tr><td>&nbsp;&nbsp;1.4 Manfaat Kerja Praktek</td><td class="dots">...........................</td><td>3</td></tr>
+    <tr><td>&nbsp;&nbsp;1.5 Batasan Masalah</td><td class="dots">...........................</td><td>3</td></tr>
+    <tr><td>&nbsp;&nbsp;1.6 Metode Pelaksanaan</td><td class="dots">...........................</td><td>4</td></tr>
+    <tr><td>&nbsp;&nbsp;1.7 Sistematika Penulisan</td><td class="dots">...........................</td><td>4</td></tr>
+    <tr><td colspan="3"><br></td></tr>
+    <tr><td class="section-header">BAB II PROFIL UMKM</td><td></td><td></td></tr>
+    <tr><td>&nbsp;&nbsp;2.1 Sejarah Warung RCM Kang Abuy</td><td class="dots">...........................</td><td>5</td></tr>
+    <tr><td>&nbsp;&nbsp;2.2 Visi dan Misi</td><td class="dots">...........................</td><td>5</td></tr>
+    <tr><td>&nbsp;&nbsp;2.3 Struktur Organisasi</td><td class="dots">...........................</td><td>6</td></tr>
+    <tr><td>&nbsp;&nbsp;2.4 Ruang Lingkup Usaha</td><td class="dots">...........................</td><td>6</td></tr>
+    <tr><td colspan="3"><br></td></tr>
+    <tr><td class="section-header">BAB III PELAKSANAAN KEGIATAN</td><td></td><td></td></tr>
+    <tr><td>&nbsp;&nbsp;3.1 Analisis Sistem</td><td class="dots">...........................</td><td>7</td></tr>
+    <tr><td>&nbsp;&nbsp;3.2 Perancangan Sistem</td><td class="dots">...........................</td><td>9</td></tr>
+    <tr><td>&nbsp;&nbsp;3.3 Spesifikasi Teknologi</td><td class="dots">...........................</td><td>16</td></tr>
+    <tr><td>&nbsp;&nbsp;3.4 Implementasi Sistem</td><td class="dots">...........................</td><td>18</td></tr>
+    <tr><td>&nbsp;&nbsp;3.5 Pengujian Sistem</td><td class="dots">...........................</td><td>22</td></tr>
+    <tr><td colspan="3"><br></td></tr>
+    <tr><td class="section-header">BAB IV KESIMPULAN DAN SARAN</td><td></td><td></td></tr>
+    <tr><td>&nbsp;&nbsp;4.1 Kesimpulan</td><td class="dots">...........................</td><td>26</td></tr>
+    <tr><td>&nbsp;&nbsp;4.2 Saran</td><td class="dots">...........................</td><td>27</td></tr>
+    <tr><td colspan="3"><br></td></tr>
+    <tr><td class="section-header">DAFTAR PUSTAKA</td><td class="dots">...........................</td><td>28</td></tr>
+    <tr><td class="section-header">LAMPIRAN</td><td class="dots">...........................</td><td>30</td></tr>
+  </table>
+</div>
+
+<!-- ================================================================ -->
+<!-- DAFTAR TABEL                                                      -->
+<!-- ================================================================ -->
+<div class="page page-break daftar-isi">
+  <h1 class="section-title-roman">DAFTAR TABEL</h1>
+  <table>
+    <tr><td>Tabel 3.1</td><td>Perbandingan Sistem Lama dan Sistem Baru</td><td class="dots">...</td><td>8</td></tr>
+    <tr><td>Tabel 3.2</td><td>Spesifikasi Perangkat Keras</td><td class="dots">...</td><td>16</td></tr>
+    <tr><td>Tabel 3.3</td><td>Spesifikasi Perangkat Lunak</td><td class="dots">...</td><td>17</td></tr>
+    <tr><td>Tabel 3.4</td><td>Struktur Tabel <em>profiles</em></td><td class="dots">...</td><td>18</td></tr>
+    <tr><td>Tabel 3.5</td><td>Struktur Tabel <em>menus</em></td><td class="dots">...</td><td>18</td></tr>
+    <tr><td>Tabel 3.6</td><td>Struktur Tabel <em>orders</em></td><td class="dots">...</td><td>19</td></tr>
+    <tr><td>Tabel 3.7</td><td>Struktur Tabel <em>order_items</em></td><td class="dots">...</td><td>19</td></tr>
+    <tr><td>Tabel 3.8</td><td>Struktur Tabel <em>tables</em></td><td class="dots">...</td><td>20</td></tr>
+    <tr><td>Tabel 3.9</td><td>Struktur Tabel <em>payments</em></td><td class="dots">...</td><td>20</td></tr>
+    <tr><td>Tabel 3.10</td><td>Pengujian <em>Black Box</em> – Modul Autentikasi</td><td class="dots">...</td><td>22</td></tr>
+    <tr><td>Tabel 3.11</td><td>Pengujian <em>Black Box</em> – Modul Pelanggan (QR & Pemesanan)</td><td class="dots">...</td><td>23</td></tr>
+    <tr><td>Tabel 3.12</td><td>Pengujian <em>Black Box</em> – Modul Kasir</td><td class="dots">...</td><td>24</td></tr>
+    <tr><td>Tabel 3.13</td><td>Pengujian <em>Black Box</em> – Modul Admin</td><td class="dots">...</td><td>25</td></tr>
+  </table>
+
+  <br><br>
+  <h1 class="section-title-roman">DAFTAR GAMBAR</h1>
+  <table>
+    <tr><td>Gambar 3.1</td><td>Flowchart Alur Pemesanan Pelanggan</td><td class="dots">...</td><td>9</td></tr>
+    <tr><td>Gambar 3.2</td><td>Use Case Diagram – Keseluruhan Sistem</td><td class="dots">...</td><td>10</td></tr>
+    <tr><td>Gambar 3.3</td><td>Use Case Diagram – Admin</td><td class="dots">...</td><td>11</td></tr>
+    <tr><td>Gambar 3.4</td><td>Use Case Diagram – Kasir</td><td class="dots">...</td><td>11</td></tr>
+    <tr><td>Gambar 3.5</td><td>Use Case Diagram – Pelanggan</td><td class="dots">...</td><td>12</td></tr>
+    <tr><td>Gambar 3.6</td><td>Activity Diagram – Pemesanan Pelanggan</td><td class="dots">...</td><td>13</td></tr>
+    <tr><td>Gambar 3.7</td><td>Activity Diagram – Kasir Memproses Pesanan</td><td class="dots">...</td><td>14</td></tr>
+    <tr><td>Gambar 3.8</td><td>Entity Relationship Diagram (ERD)</td><td class="dots">...</td><td>15</td></tr>
+    <tr><td>Gambar 3.9</td><td>Tampilan Halaman Beranda (Home)</td><td class="dots">...</td><td>21</td></tr>
+    <tr><td>Gambar 3.10</td><td>Tampilan Halaman Menu Digital</td><td class="dots">...</td><td>21</td></tr>
+    <tr><td>Gambar 3.11</td><td>Tampilan Halaman Pemesanan via QR</td><td class="dots">...</td><td>21</td></tr>
+    <tr><td>Gambar 3.12</td><td>Tampilan Dashboard Admin</td><td class="dots">...</td><td>22</td></tr>
+    <tr><td>Gambar 3.13</td><td>Tampilan Dashboard Kasir (POS)</td><td class="dots">...</td><td>22</td></tr>
+  </table>
+</div>
+
+<!-- ================================================================ -->
+<!-- BAB I: PENDAHULUAN                                                -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="bab">BAB I<br>PENDAHULUAN</h1>
+
+  <h2 class="sub-bab">1.1 Latar Belakang</h2>
+  <p>Perkembangan teknologi informasi dan komunikasi yang semakin pesat telah membawa dampak signifikan terhadap berbagai sektor kehidupan, termasuk sektor kuliner dan usaha mikro kecil dan menengah (UMKM). Digitalisasi UMKM menjadi salah satu agenda prioritas nasional sebagaimana tertuang dalam roadmap e-Commerce Indonesia, di mana pelaku usaha didorong untuk mengadopsi teknologi digital guna meningkatkan efisiensi, jangkauan pasar, dan kualitas layanan (Kemenkop UKM, 2023).</p>
+
+  <p>Warung RCM Kang Abuy adalah salah satu UMKM kuliner yang memiliki potensi besar namun masih menghadapi berbagai kendala operasional akibat proses kerja yang bersifat manual. Proses pemesanan yang masih menggunakan menu berbasis kertas (<em>paper-based menu</em>) dan pencatatan pesanan secara manual oleh pelayan menyebabkan beberapa permasalahan, antara lain: antrian panjang saat jam makan siang, kesalahan pencatatan pesanan (<em>order error</em>), dan ketidakefisienan waktu pelayanan.</p>
+
+  <p>Teknologi QR Code (<em>Quick Response Code</em>) telah terbukti secara luas digunakan dalam berbagai aplikasi, termasuk sistem pemesanan makanan di restoran (<em>table-side ordering</em>). Menurut Syarif et al. (2022), penerapan sistem pemesanan berbasis QR Code pada restoran dapat mengurangi waktu tunggu pelanggan hingga 40% dan meningkatkan akurasi pesanan secara signifikan. Hal ini sejalan dengan kebutuhan Warung RCM Kang Abuy untuk bertransformasi secara digital.</p>
+
+  <p>Berdasarkan latar belakang tersebut, penulis mengambil tema Kerja Praktek berupa perancangan dan pembangunan sebuah <em>Website Menu Digital Berbasis QR Code untuk Warung RCM Kang Abuy</em>, yang memungkinkan pelanggan untuk melakukan pemesanan mandiri secara digital, serta menyediakan sistem manajemen terintegrasi bagi pemilik dan kasir.</p>
+
+  <h2 class="sub-bab">1.2 Rumusan Masalah</h2>
+  <p>Berdasarkan latar belakang yang telah dipaparkan, rumusan masalah dalam kegiatan Kerja Praktek ini adalah:</p>
+  <ol>
+    <li>Bagaimana merancang dan membangun sistem website menu digital berbasis QR Code yang dapat digunakan pelanggan untuk memesan makanan secara mandiri?</li>
+    <li>Bagaimana membangun dasbor manajemen terintegrasi bagi pemilik (admin) dan kasir untuk mengelola menu, pesanan, transaksi, dan laporan?</li>
+    <li>Bagaimana mengintegrasikan fitur <em>real-time</em> agar status pesanan dapat dipantau secara langsung oleh pelanggan dan kasir?</li>
+  </ol>
+
+  <h2 class="sub-bab">1.3 Tujuan Kerja Praktek</h2>
+  <p>Tujuan dari kegiatan Kerja Praktek ini adalah:</p>
+  <ol>
+    <li>Merancang dan membangun <em>website menu digital berbasis QR Code</em> yang memungkinkan pelanggan Warung RCM Kang Abuy untuk memesan makanan secara mandiri tanpa harus memanggil pelayan;</li>
+    <li>Membangun sistem manajemen terintegrasi yang mencakup dasbor admin, dasbor kasir (POS), manajemen menu, manajemen meja, manajemen transaksi, dan laporan keuangan;</li>
+    <li>Mengimplementasikan fitur pembaruan status pesanan secara <em>real-time</em> menggunakan teknologi <em>Supabase Realtime</em>;</li>
+    <li>Menerapkan metode pembayaran digital (QRIS) dan tunai yang terintegrasi dalam sistem.</li>
+  </ol>
+
+  <h2 class="sub-bab">1.4 Manfaat Kerja Praktek</h2>
+  <p>Manfaat yang diharapkan dari kegiatan Kerja Praktek ini adalah sebagai berikut:</p>
+  <p><strong>Bagi Warung RCM Kang Abuy:</strong></p>
+  <ol>
+    <li>Meningkatkan efisiensi pelayanan dengan mengurangi antrian dan kesalahan pencatatan pesanan;</li>
+    <li>Memperluas jangkauan promosi melalui platform digital;</li>
+    <li>Mendapatkan data analitik penjualan yang akurat untuk pengambilan keputusan bisnis;</li>
+    <li>Meningkatkan citra UMKM sebagai usaha yang modern dan melek teknologi.</li>
+  </ol>
+  <p><strong>Bagi Mahasiswa:</strong></p>
+  <ol>
+    <li>Mendapatkan pengalaman nyata dalam mengembangkan sistem informasi untuk kebutuhan bisnis;</li>
+    <li>Mengaplikasikan ilmu yang diperoleh selama perkuliahan dalam konteks dunia kerja;</li>
+    <li>Mengembangkan kompetensi di bidang <em>full-stack web development</em> dengan teknologi modern.</li>
+  </ol>
+  <p><strong>Bagi Akademik:</strong></p>
+  <ol>
+    <li>Menjadi referensi penelitian di bidang sistem informasi UMKM dan digitalisasi kuliner;</li>
+    <li>Memperkuat kerjasama antara institusi pendidikan dengan pelaku UMKM lokal.</li>
+  </ol>
+
+  <h2 class="sub-bab">1.5 Batasan Masalah</h2>
+  <p>Agar penelitian ini lebih terarah dan fokus, maka ditetapkan batasan-batasan masalah sebagai berikut:</p>
+  <ol>
+    <li>Sistem yang dibangun merupakan aplikasi berbasis web yang dapat diakses melalui peramban (<em>browser</em>) pada perangkat <em>smartphone</em> maupun komputer;</li>
+    <li>Sistem hanya mencakup operasional Warung RCM Kang Abuy dan tidak dirancang untuk digunakan oleh restoran lain;</li>
+    <li>Metode pembayaran yang didukung adalah tunai dan QRIS; pembayaran kartu debit/kredit tidak termasuk dalam cakupan;</li>
+    <li>Fitur pelaporan keuangan mencakup laporan harian dan ringkasan transaksi; laporan perpajakan tidak termasuk dalam cakupan;</li>
+    <li>Sistem diuji menggunakan metode <em>Black Box Testing</em> dan tidak mencakup pengujian beban (<em>load testing</em>) skala besar.</li>
+  </ol>
+
+  <h2 class="sub-bab">1.6 Metode Pelaksanaan</h2>
+  <p>Metode yang digunakan dalam pelaksanaan Kerja Praktek ini meliputi:</p>
+  <ol>
+    <li><strong>Observasi:</strong> Melakukan pengamatan langsung terhadap proses operasional Warung RCM Kang Abuy untuk memahami alur kerja yang berjalan saat ini;</li>
+    <li><strong>Wawancara:</strong> Melakukan wawancara dengan pemilik dan karyawan warung untuk menggali kebutuhan sistem (<em>requirement gathering</em>);</li>
+    <li><strong>Studi Pustaka:</strong> Mengkaji referensi, jurnal, dan dokumentasi teknologi yang relevan sebagai landasan teori;</li>
+    <li><strong>Pengembangan Sistem:</strong> Merancang dan membangun sistem menggunakan pendekatan <em>waterfall</em> yang mencakup analisis, desain, implementasi, dan pengujian;</li>
+    <li><strong>Pengujian:</strong> Melakukan pengujian sistem menggunakan metode <em>Black Box Testing</em> untuk memverifikasi fungsionalitas sistem.</li>
+  </ol>
+
+  <h2 class="sub-bab">1.7 Sistematika Penulisan</h2>
+  <p>Laporan Kerja Praktek ini disusun dengan sistematika penulisan sebagai berikut:</p>
+  <p><strong>BAB I – Pendahuluan:</strong> Memuat latar belakang, rumusan masalah, tujuan, manfaat, batasan masalah, metode pelaksanaan, dan sistematika penulisan.</p>
+  <p><strong>BAB II – Profil UMKM:</strong> Mendeskripsikan profil Warung RCM Kang Abuy, meliputi sejarah, visi misi, struktur organisasi, dan ruang lingkup usaha.</p>
+  <p><strong>BAB III – Pelaksanaan Kegiatan:</strong> Memuat analisis sistem berjalan dan usulan, perancangan sistem (flowchart, use case, activity diagram, ERD), spesifikasi teknologi, implementasi, dan hasil pengujian.</p>
+  <p><strong>BAB IV – Kesimpulan dan Saran:</strong> Menyajikan kesimpulan dari kegiatan Kerja Praktek dan saran pengembangan sistem ke depan.</p>
+  <p><strong>Daftar Pustaka:</strong> Berisi daftar referensi yang digunakan dalam penyusunan laporan.</p>
+  <p><strong>Lampiran:</strong> Berisi dokumentasi foto kegiatan Kerja Praktek.</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- BAB II: PROFIL UMKM                                               -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="bab">BAB II<br>PROFIL UMKM</h1>
+
+  <h2 class="sub-bab">2.1 Sejarah Warung RCM Kang Abuy</h2>
+  <p>Warung RCM Kang Abuy merupakan usaha kuliner yang didirikan oleh Kang Abuy pada tahun <span class="placeholder">[Tahun Berdiri]</span> di <span class="placeholder">[Alamat Lengkap Warung]</span>. Nama "RCM" pada warung ini merupakan singkatan dari <span class="placeholder">[Arti RCM jika ada, atau hapus keterangan ini]</span>, yang mencerminkan identitas dan ciri khas warung tersebut.</p>
+
+  <p>Warung ini berawal dari usaha kecil yang melayani kebutuhan makan siang bagi warga sekitar dan pekerja di area tersebut. Dengan tagline <em>"Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer"</em>, Warung RCM Kang Abuy berhasil membangun basis pelanggan yang loyal dan terus berkembang. Hingga saat ini, warung tersebut telah melayani ratusan pelanggan setiap harinya dan menjadi salah satu destinasi kuliner terfavorit di lingkungan sekitarnya.</p>
+
+  <p>Seiring berkembangnya skala usaha, pemilik menyadari perlunya transformasi digital untuk meningkatkan kualitas pelayanan dan efisiensi operasional. Hal inilah yang melatarbelakangi kerja sama antara pemilik warung dengan mahasiswa Kerja Praktek untuk membangun sistem website menu digital berbasis QR Code.</p>
+
+  <h2 class="sub-bab">2.2 Visi dan Misi</h2>
+  <p><strong>Visi:</strong></p>
+  <p>Menjadi warung makan modern berbasis digital yang memberikan pelayanan terbaik, efisien, dan memuaskan bagi seluruh pelanggan.</p>
+
+  <p><strong>Misi:</strong></p>
+  <ol>
+    <li>Menyajikan makanan yang lezat, bergizi, dan higienis dengan harga yang terjangkau;</li>
+    <li>Memberikan pelayanan yang cepat, ramah, dan profesional kepada setiap pelanggan;</li>
+    <li>Mengadopsi teknologi digital untuk meningkatkan efisiensi operasional dan kepuasan pelanggan;</li>
+    <li>Mendukung pertumbuhan UMKM lokal melalui inovasi dan pengembangan berkelanjutan.</li>
+  </ol>
+
+  <h2 class="sub-bab">2.3 Struktur Organisasi</h2>
+  <p>Struktur organisasi Warung RCM Kang Abuy terbagi menjadi beberapa bagian dengan tugas dan tanggung jawab masing-masing, sebagaimana digambarkan dalam bagan berikut:</p>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    flowchart TB
+      A["Pemilik (Kang Abuy)"]
+      B["Pengelola / Manajer"]
+      C["Kasir"]
+      D["Koki / Juru Masak"]
+      E["Pelayan"]
+      A --> B
+      B --> C
+      B --> D
+      B --> E
+    </div>
+    <p class="figure-caption">Gambar 2.1 Struktur Organisasi Warung RCM Kang Abuy</p>
+  </div>
+
+  <p>Pemilik bertindak sebagai pengambil keputusan tertinggi dan memiliki akses penuh terhadap sistem sebagai <em>admin</em>. Kasir bertugas memproses transaksi pembayaran, mengelola antrian takeaway, dan memantau status meja melalui sistem POS. Koki dan pelayan bertugas pada operasional dapur dan pelayanan di meja makan.</p>
+
+  <h2 class="sub-bab">2.4 Ruang Lingkup Usaha</h2>
+  <p>Warung RCM Kang Abuy bergerak di bidang usaha kuliner dengan ruang lingkup sebagai berikut:</p>
+  <ol>
+    <li><strong>Jenis Layanan:</strong> Makan di tempat (<em>dine-in</em>) dan bawa pulang (<em>takeaway</em>);</li>
+    <li><strong>Jenis Menu:</strong> Makanan berat (nasi dan lauk-pauk), makanan ringan, dan minuman;</li>
+    <li><strong>Jam Operasional:</strong> <span class="placeholder">[Jam Buka] – [Jam Tutup]</span>, setiap hari Senin–Minggu;</li>
+    <li><strong>Kapasitas:</strong> <span class="placeholder">[Jumlah] meja</span> dengan total kapasitas <span class="placeholder">[Jumlah] kursi</span>;</li>
+    <li><strong>Lokasi:</strong> <span class="placeholder">[Alamat Lengkap]</span>.</li>
+  </ol>
+</div>
+
+<!-- ================================================================ -->
+<!-- BAB III: PELAKSANAAN KEGIATAN                                     -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="bab">BAB III<br>PELAKSANAAN KEGIATAN</h1>
+
+  <h2 class="sub-bab">3.1 Analisis Sistem</h2>
+  <h3 class="sub-sub-bab">3.1.1 Analisis Sistem Berjalan</h3>
+  <p>Sebelum dilaksanakan Kerja Praktek, penulis melakukan survei dan observasi terhadap proses operasional Warung RCM Kang Abuy. Dari hasil pengamatan, ditemukan bahwa sistem yang berjalan saat ini masih sepenuhnya manual, dengan alur sebagai berikut:</p>
+  <ol>
+    <li>Pelanggan datang dan duduk di meja;</li>
+    <li>Pelayan menyerahkan buku menu berbasis kertas kepada pelanggan;</li>
+    <li>Pelanggan menyebutkan pesanan kepada pelayan secara lisan;</li>
+    <li>Pelayan mencatat pesanan di kertas nota;</li>
+    <li>Pelayan menyerahkan nota ke dapur;</li>
+    <li>Dapur memasak berdasarkan catatan nota;</li>
+    <li>Setelah selesai makan, pelanggan membayar ke kasir secara tunai.</li>
+  </ol>
+
+  <h3 class="sub-sub-bab">3.1.2 Identifikasi Permasalahan</h3>
+  <p>Dari analisis sistem berjalan, ditemukan beberapa permasalahan utama, antara lain:</p>
+  <ol>
+    <li>Proses pemesanan yang lambat karena pelanggan harus menunggu pelayan;</li>
+    <li>Potensi kesalahan pencatatan pesanan (<em>human error</em>);</li>
+    <li>Tidak ada rekap data penjualan yang akurat dan otomatis;</li>
+    <li>Menu tidak dapat diperbarui dengan cepat jika ada item yang habis;</li>
+    <li>Proses antrian takeaway yang tidak terstruktur.</li>
+  </ol>
+
+  <h3 class="sub-sub-bab">3.1.3 Analisis Kebutuhan Sistem</h3>
+  <p>Berdasarkan wawancara dengan pemilik dan kasir, kebutuhan sistem yang harus dipenuhi meliputi:</p>
+  <ol>
+    <li>Pelanggan dapat melihat menu digital dan memesan secara mandiri melalui QR Code;</li>
+    <li>Admin dapat mengelola menu, kategori, meja, promosi, dan voucher;</li>
+    <li>Kasir memiliki sistem POS untuk memproses transaksi dan pembayaran;</li>
+    <li>Status pesanan dapat dipantau secara <em>real-time</em>;</li>
+    <li>Tersedia laporan keuangan harian dan analitik penjualan.</li>
+  </ol>
+
+  <h3 class="sub-sub-bab">3.1.4 Perbandingan Sistem Lama dan Sistem Baru</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.1 Perbandingan Sistem Lama dan Sistem Baru</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%;">No</th>
+          <th style="width:45%;">Sistem Lama</th>
+          <th style="width:45%;">Sistem Baru</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>Menu berbasis kertas (buku menu fisik)</td>
+          <td>Menu digital yang dapat diakses via QR Code</td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td>Pelanggan memanggil pelayan untuk memesan</td>
+          <td>Pelanggan memesan sendiri melalui smartphone</td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td>Pencatatan pesanan manual di kertas nota</td>
+          <td>Pesanan langsung masuk ke sistem database secara otomatis</td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td>Tidak ada informasi status pesanan bagi pelanggan</td>
+          <td>Pelanggan dapat memantau status pesanan secara <em>real-time</em></td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td>Pembayaran hanya tunai</td>
+          <td>Pembayaran tunai dan QRIS (digital)</td>
+        </tr>
+        <tr>
+          <td class="center">6</td>
+          <td>Tidak ada rekap data penjualan otomatis</td>
+          <td>Laporan keuangan dan analitik tersedia otomatis</td>
+        </tr>
+        <tr>
+          <td class="center">7</td>
+          <td>Update menu memerlukan cetak ulang buku menu</td>
+          <td>Admin dapat memperbarui menu kapan saja secara digital</td>
+        </tr>
+        <tr>
+          <td class="center">8</td>
+          <td>Tidak ada manajemen antrean takeaway</td>
+          <td>Antrian takeaway terkelola dalam sistem</td>
+        </tr>
+        <tr>
+          <td class="center">9</td>
+          <td>Tidak ada sistem promosi/voucher digital</td>
+          <td>Sistem promosi dan voucher digital terintegrasi</td>
+        </tr>
+        <tr>
+          <td class="center">10</td>
+          <td>Tidak ada sistem keanggotaan pelanggan</td>
+          <td>Sistem <em>membership</em> dengan tingkatan loyalitas pelanggan</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: PERANCANGAN SISTEM -->
+<div class="page page-break">
+  <h2 class="sub-bab">3.2 Perancangan Sistem</h2>
+  <h3 class="sub-sub-bab">3.2.1 Flowchart Alur Pemesanan Pelanggan</h3>
+  <p>Flowchart berikut menggambarkan alur proses pemesanan yang dilakukan oleh pelanggan menggunakan sistem website menu digital berbasis QR Code:</p>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    flowchart TD
+      A([Mulai]) --> B[Pelanggan Duduk di Meja]
+      B --> C[Scan QR Code pada Meja]
+      C --> D[Buka Website Menu Digital]
+      D --> E[Lihat Menu & Pilih Item]
+      E --> F[Masukkan ke Keranjang]
+      F --> G{Tambah item lain?}
+      G -- Ya --> E
+      G -- Tidak --> H[Buka Halaman Checkout]
+      H --> I{Login / Guest?}
+      I -- Login --> J[Login via Google / OTP WA]
+      I -- Guest --> K[Masukkan Nama & No HP]
+      J --> L[Pilih Metode Pembayaran]
+      K --> L
+      L --> M{Metode Pembayaran?}
+      M -- QRIS --> N[Upload Bukti Transfer QRIS]
+      M -- Tunai --> O[Konfirmasi Bayar ke Kasir]
+      N --> P[Kasir Verifikasi Pembayaran]
+      O --> P
+      P --> Q[Pesanan Masuk ke Sistem & Dapur]
+      Q --> R[Pantau Status Pesanan Real-time]
+      R --> S{Status Pesanan?}
+      S -- Sedang Diproses --> R
+      S -- Siap --> T[Pesanan Diterima Pelanggan]
+      T --> U([Selesai])
+    </div>
+    <p class="figure-caption">Gambar 3.1 Flowchart Alur Pemesanan Pelanggan</p>
+  </div>
+
+  <h3 class="sub-sub-bab">3.2.2 Use Case Diagram</h3>
+  <p>Use Case Diagram menggambarkan interaksi antara aktor (Admin, Kasir, dan Pelanggan) dengan sistem secara keseluruhan.</p>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    flowchart LR
+      Admin(["👤 Admin"])
+      Kasir(["👤 Kasir"])
+      Pelanggan(["👤 Pelanggan"])
+      subgraph Sistem ["Waroeng RCM System"]
+        direction TB
+        UC1["🔐 Autentikasi Login"]
+        UC2["📋 Manajemen Menu & Kategori"]
+        UC3["🎁 Manajemen Promosi & Voucher"]
+        UC4["📦 Manajemen Pesanan"]
+        UC5["🪑 Manajemen Meja & QR Code"]
+        UC6["📊 Laporan & Analitik"]
+        UC7["⚙️ Pengaturan Website (CMS)"]
+        UC8["💰 Sistem POS Kasir"]
+        UC9["🧾 Proses Pembayaran"]
+        UC10["🛒 Pesan via QR Meja"]
+        UC11["📱 Lacak Status Pesanan"]
+        UC12["🏷️ Gunakan Voucher"]
+        UC13["⭐ Sistem Membership"]
+      end
+      Admin --> UC1
+      Admin --> UC2
+      Admin --> UC3
+      Admin --> UC4
+      Admin --> UC5
+      Admin --> UC6
+      Admin --> UC7
+      Kasir --> UC1
+      Kasir --> UC8
+      Kasir --> UC9
+      Kasir --> UC4
+      Pelanggan --> UC10
+      Pelanggan --> UC11
+      Pelanggan --> UC12
+      Pelanggan --> UC13
+    </div>
+    <p class="figure-caption">Gambar 3.2 Use Case Diagram Keseluruhan Sistem Waroeng RCM</p>
+  </div>
+</div>
+
+<!-- PAGE: ACTIVITY DIAGRAMS -->
+<div class="page page-break">
+  <h3 class="sub-sub-bab">3.2.3 Activity Diagram</h3>
+  <p>Activity Diagram menggambarkan alur aktivitas dan interaksi antar komponen dalam sistem secara lebih detail.</p>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    stateDiagram-v2
+      [*] --> Mulai
+      Mulai --> PilihMetodePesan
+      state PilihMetodePesan {
+        direction LR
+        DineIn --> ScanQRMeja
+        Takeaway --> BukaWebLangsung
+      }
+      PilihMetodePesan --> BukaAplikasiWeb
+      BukaAplikasiWeb --> LihatMenu
+      LihatMenu --> PilihItem
+      PilihItem --> MasukkanKeKeranjang
+      state check_cart <<choice>>
+      MasukkanKeKeranjang --> check_cart
+      check_cart --> LihatMenu : Tambah item lain
+      check_cart --> Checkout : Selesai memilih
+      Checkout --> LoginAtauGuest
+      LoginAtauGuest --> PilihMetodePembayaran
+      state check_payment <<choice>>
+      PilihMetodePembayaran --> check_payment
+      check_payment --> BayarQRIS : Pilih QRIS
+      check_payment --> BayarTunai : Pilih Tunai
+      BayarQRIS --> SistemVerifikasiPembayaran
+      SistemVerifikasiPembayaran --> PesananMasukSistem : Berhasil
+      BayarTunai --> KasirVerifikasiPembayaran
+      KasirVerifikasiPembayaran --> PesananMasukSistem
+      PesananMasukSistem --> PantauStatusPesanan
+      PantauStatusPesanan --> PesananSelesai
+      PesananSelesai --> [*]
+    </div>
+    <p class="figure-caption">Gambar 3.6 Activity Diagram – Alur Pemesanan Pelanggan</p>
+  </div>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    stateDiagram-v2
+      [*] --> LoginKasir
+      LoginKasir --> BukaDashboardPOS
+      BukaDashboardPOS --> TerimaPesanan
+      state check_order_type <<choice>>
+      TerimaPesanan --> check_order_type
+      check_order_type --> OrderDariPelangganWeb : Pesanan Otomatis Masuk
+      check_order_type --> OrderLangsung : Input Manual POS
+      OrderLangsung --> PilihMenuDiPOS
+      PilihMenuDiPOS --> ProsesCheckoutPOS
+      ProsesCheckoutPOS --> TerimaPembayaran
+      OrderDariPelangganWeb --> TerimaPembayaran : Jika Tunai
+      TerimaPembayaran --> VerifikasiPembayaran
+      VerifikasiPembayaran --> UbahStatusPesanan
+      UbahStatusPesanan --> CetakStruk
+      CetakStruk --> [*]
+    </div>
+    <p class="figure-caption">Gambar 3.7 Activity Diagram – Kasir Memproses Pesanan</p>
+  </div>
+</div>
+
+<!-- PAGE: ERD -->
+<div class="page page-break">
+  <h3 class="sub-sub-bab">3.2.4 Entity Relationship Diagram (ERD)</h3>
+  <p>ERD berikut menggambarkan relasi antar entitas dalam basis data sistem Waroeng RCM Kang Abuy. Basis data dibangun menggunakan PostgreSQL melalui platform Supabase.</p>
+
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    erDiagram
+      PROFILES {
+        uuid id PK
+        text full_name
+        text phone
+        text role
+        text membership_level
+        int total_orders
+        decimal total_spent
+        date birth_date
+        text avatar_url
+        timestamptz created_at
+      }
+      CATEGORIES {
+        uuid id PK
+        text name
+        text slug
+        text description
+        text image_url
+        int sort_order
+        boolean active
+      }
+      MENUS {
+        uuid id PK
+        uuid category_id FK
+        text name
+        text slug
+        decimal price
+        text image_url
+        boolean is_best_seller
+        boolean is_available
+        int total_sold
+      }
+      TABLES {
+        uuid id PK
+        text table_number
+        int capacity
+        text status
+        text qr_code_url
+        uuid current_session_id
+      }
+      ORDERS {
+        uuid id PK
+        uuid customer_id FK
+        uuid cashier_id FK
+        text table_number
+        text order_type
+        text status
+        decimal total_amount
+        text notes
+        timestamptz created_at
+      }
+      ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid menu_id FK
+        int quantity
+        decimal price
+        decimal subtotal
+        text notes
+      }
+      PAYMENTS {
+        uuid id PK
+        uuid order_id FK
+        decimal amount
+        text method
+        text status
+        text proof_url
+        uuid validated_by FK
+        timestamptz validated_at
+      }
+      VOUCHERS {
+        uuid id PK
+        text code
+        text type
+        decimal value
+        decimal min_purchase
+        timestamptz valid_until
+        int usage_limit
+        int usage_count
+        boolean is_active
+      }
+      TABLE_SESSIONS {
+        uuid id PK
+        uuid table_id FK
+        uuid customer_id FK
+        timestamptz check_in
+        timestamptz check_out
+        decimal total_amount
+        text status
+      }
+
+      CATEGORIES ||--o{ MENUS : "memiliki"
+      MENUS ||--o{ ORDER_ITEMS : "dipesan dalam"
+      ORDERS ||--o{ ORDER_ITEMS : "terdiri dari"
+      ORDERS ||--|| PAYMENTS : "dibayar dengan"
+      PROFILES ||--o{ ORDERS : "membuat (customer)"
+      PROFILES ||--o{ ORDERS : "memproses (cashier)"
+      TABLES ||--o{ TABLE_SESSIONS : "memiliki sesi"
+      PROFILES ||--o{ TABLE_SESSIONS : "menempati"
+    </div>
+    <p class="figure-caption">Gambar 3.8 Entity Relationship Diagram (ERD) Sistem Waroeng RCM Kang Abuy</p>
+  </div>
+</div>
+
+<!-- PAGE: SPESIFIKASI TEKNOLOGI -->
+<div class="page page-break">
+  <h2 class="sub-bab">3.3 Spesifikasi Teknologi</h2>
+  <h3 class="sub-sub-bab">3.3.1 Spesifikasi Perangkat Keras</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.2 Spesifikasi Perangkat Keras yang Digunakan</p>
+    <table>
+      <thead>
+        <tr><th style="width:10%;">No</th><th style="width:35%;">Komponen</th><th>Spesifikasi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Perangkat Pengembangan</td><td>Laptop / PC</td></tr>
+        <tr><td class="center">2</td><td>Prosesor</td><td><span class="placeholder">[Nama & Spesifikasi Prosesor, misal: Intel Core i5-12th Gen]</span></td></tr>
+        <tr><td class="center">3</td><td>RAM</td><td><span class="placeholder">[Kapasitas RAM, misal: 8 GB / 16 GB]</span></td></tr>
+        <tr><td class="center">4</td><td>Penyimpanan</td><td><span class="placeholder">[Kapasitas & Jenis, misal: 512 GB SSD]</span></td></tr>
+        <tr><td class="center">5</td><td>Perangkat Akses Pelanggan</td><td>Smartphone berbasis Android / iOS dengan kamera QR</td></tr>
+        <tr><td class="center">6</td><td>Jaringan</td><td>Internet (WiFi / Paket Data)</td></tr>
+        <tr><td class="center">7</td><td>Server</td><td>Supabase Cloud (PostgreSQL) + Vercel Serverless</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-sub-bab">3.3.2 Spesifikasi Perangkat Lunak</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.3 Spesifikasi Perangkat Lunak yang Digunakan</p>
+    <table>
+      <thead>
+        <tr><th style="width:10%;">No</th><th style="width:35%;">Perangkat Lunak</th><th style="width:25%;">Versi</th><th>Fungsi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>React.js</td><td>18.2.0</td><td>Library JavaScript untuk membangun antarmuka pengguna (<em>frontend</em>)</td></tr>
+        <tr><td class="center">2</td><td>Vite</td><td>5.0.8</td><td>Build tool dan development server untuk React</td></tr>
+        <tr><td class="center">3</td><td>Tailwind CSS</td><td>3.4.0</td><td>Framework CSS untuk desain antarmuka pengguna</td></tr>
+        <tr><td class="center">4</td><td>Supabase JS</td><td>2.39.0</td><td>SDK untuk koneksi ke Supabase (database, auth, storage)</td></tr>
+        <tr><td class="center">5</td><td>React Router DOM</td><td>6.21.0</td><td>Manajemen routing halaman pada aplikasi</td></tr>
+        <tr><td class="center">6</td><td>Zustand</td><td>4.4.7</td><td>State management global (keranjang, autentikasi)</td></tr>
+        <tr><td class="center">7</td><td>TanStack Query</td><td>5.17.0</td><td>Data fetching dan caching dari API</td></tr>
+        <tr><td class="center">8</td><td>Framer Motion</td><td>10.18.0</td><td>Animasi dan transisi antarmuka pengguna</td></tr>
+        <tr><td class="center">9</td><td>QRCode.js</td><td>1.5.3</td><td>Generasi gambar QR Code untuk tiap meja</td></tr>
+        <tr><td class="center">10</td><td>Lucide React</td><td>0.303.0</td><td>Library ikon untuk antarmuka pengguna</td></tr>
+        <tr><td class="center">11</td><td>PostgreSQL</td><td>15 (via Supabase)</td><td>Sistem manajemen basis data relasional</td></tr>
+        <tr><td class="center">12</td><td>Visual Studio Code</td><td>Terbaru</td><td>Code editor utama pengembangan</td></tr>
+        <tr><td class="center">13</td><td>Vercel</td><td>Cloud</td><td>Platform deployment aplikasi web</td></tr>
+        <tr><td class="center">14</td><td>Git & GitHub</td><td>Terbaru</td><td>Version control dan manajemen kode sumber</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-sub-bab">3.3.3 Arsitektur Sistem</h3>
+  <p>Sistem Waroeng RCM Kang Abuy dibangun dengan arsitektur <em>Single Page Application</em> (SPA) berbasis <em>React.js</em> yang terkoneksi dengan backend <em>Supabase</em> (BaaS – <em>Backend as a Service</em>). Berikut gambaran arsitektur sistem secara keseluruhan:</p>
+  <div class="figure mermaid-wrap avoid-break">
+    <div class="mermaid">
+    flowchart TB
+      subgraph Client ["Sisi Klien (Browser)"]
+        A["React 18 + Vite"]
+        B["Tailwind CSS + Framer Motion"]
+        C["Zustand (State) + TanStack Query (Data)"]
+        D["React Router DOM (Routing)"]
+      end
+      subgraph Supabase ["Supabase Cloud (Backend)"]
+        E["PostgreSQL Database"]
+        F["Supabase Auth (Google + OTP WA)"]
+        G["Supabase Storage (Gambar Menu, QR Code)"]
+        H["Supabase Realtime (Status Pesanan)"]
+      end
+      subgraph Deploy ["Deployment"]
+        I["Vercel (Hosting + CDN)"]
+      end
+      A --> E
+      A --> F
+      A --> G
+      A --> H
+      I --> A
+    </div>
+    <p class="figure-caption">Gambar Arsitektur Sistem Waroeng RCM Kang Abuy</p>
+  </div>
+</div>
+
+<!-- PAGE: IMPLEMENTASI -->
+<div class="page page-break">
+  <h2 class="sub-bab">3.4 Implementasi Sistem</h2>
+  <h3 class="sub-sub-bab">3.4.1 Struktur Database</h3>
+  <p>Database sistem dibangun menggunakan PostgreSQL melalui layanan Supabase. Berikut adalah struktur tabel-tabel utama dalam sistem:</p>
+
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.4 Struktur Tabel <em>profiles</em></p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key, referensi ke auth.users Supabase</td></tr>
+        <tr><td>full_name</td><td>TEXT</td><td>Nama lengkap pengguna</td></tr>
+        <tr><td>phone</td><td>TEXT</td><td>Nomor telepon pengguna</td></tr>
+        <tr><td>role</td><td>TEXT</td><td>Peran: admin / kasir / customer</td></tr>
+        <tr><td>membership_level</td><td>TEXT</td><td>Tingkat keanggotaan: member_baru / member_setia / vip</td></tr>
+        <tr><td>total_orders</td><td>INTEGER</td><td>Total pesanan yang pernah dilakukan</td></tr>
+        <tr><td>total_spent</td><td>DECIMAL</td><td>Total pengeluaran kumulatif</td></tr>
+        <tr><td>birth_date</td><td>DATE</td><td>Tanggal lahir pengguna</td></tr>
+        <tr><td>avatar_url</td><td>TEXT</td><td>URL foto profil</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>Waktu pembuatan akun</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.5 Struktur Tabel <em>menus</em></p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key menu</td></tr>
+        <tr><td>category_id</td><td>UUID (FK)</td><td>Referensi ke tabel categories</td></tr>
+        <tr><td>name</td><td>TEXT</td><td>Nama menu</td></tr>
+        <tr><td>slug</td><td>TEXT (UNIQUE)</td><td>Slug URL unik untuk menu</td></tr>
+        <tr><td>description</td><td>TEXT</td><td>Deskripsi menu</td></tr>
+        <tr><td>price</td><td>DECIMAL</td><td>Harga menu</td></tr>
+        <tr><td>image_url</td><td>TEXT</td><td>URL gambar menu</td></tr>
+        <tr><td>is_best_seller</td><td>BOOLEAN</td><td>Penanda menu terlaris</td></tr>
+        <tr><td>is_available</td><td>BOOLEAN</td><td>Status ketersediaan menu</td></tr>
+        <tr><td>total_sold</td><td>INTEGER</td><td>Total item yang telah terjual</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.6 Struktur Tabel <em>orders</em></p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key pesanan</td></tr>
+        <tr><td>customer_id</td><td>UUID (FK)</td><td>Referensi ke profil pelanggan</td></tr>
+        <tr><td>cashier_id</td><td>UUID (FK)</td><td>Referensi ke profil kasir yang memproses</td></tr>
+        <tr><td>table_number</td><td>TEXT</td><td>Nomor meja pelanggan</td></tr>
+        <tr><td>order_type</td><td>TEXT</td><td>Jenis pesanan: dine_in / takeaway_waiting / takeaway_pickup</td></tr>
+        <tr><td>status</td><td>TEXT</td><td>Status: pending / processing / ready / completed / cancelled</td></tr>
+        <tr><td>total_amount</td><td>DECIMAL</td><td>Total harga pesanan</td></tr>
+        <tr><td>notes</td><td>TEXT</td><td>Catatan tambahan pesanan</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>Waktu pesanan dibuat</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: IMPLEMENTASI LANJUTAN -->
+<div class="page page-break">
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.7 Struktur Tabel <em>order_items</em></p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key item pesanan</td></tr>
+        <tr><td>order_id</td><td>UUID (FK)</td><td>Referensi ke tabel orders</td></tr>
+        <tr><td>menu_id</td><td>UUID (FK)</td><td>Referensi ke tabel menus</td></tr>
+        <tr><td>quantity</td><td>INTEGER</td><td>Jumlah item yang dipesan</td></tr>
+        <tr><td>price</td><td>DECIMAL</td><td>Harga satuan saat pemesanan</td></tr>
+        <tr><td>subtotal</td><td>DECIMAL</td><td>Subtotal (quantity × price)</td></tr>
+        <tr><td>notes</td><td>TEXT</td><td>Catatan khusus untuk item (misal: pedas, tanpa bawang)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.8 Struktur Tabel <em>tables</em> (Meja)</p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key meja</td></tr>
+        <tr><td>table_number</td><td>TEXT (UNIQUE)</td><td>Nomor meja (misal: A1, B2)</td></tr>
+        <tr><td>capacity</td><td>INTEGER</td><td>Kapasitas meja (jumlah kursi)</td></tr>
+        <tr><td>status</td><td>TEXT</td><td>Status: available / occupied / waiting_payment / cleaning / reserved / disabled</td></tr>
+        <tr><td>qr_code_url</td><td>TEXT</td><td>URL gambar QR Code meja</td></tr>
+        <tr><td>current_session_id</td><td>UUID</td><td>Referensi ke sesi meja aktif saat ini</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.9 Struktur Tabel <em>payments</em></p>
+    <table>
+      <thead><tr><th>Kolom</th><th>Tipe Data</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>UUID (PK)</td><td>Primary key pembayaran</td></tr>
+        <tr><td>order_id</td><td>UUID (FK)</td><td>Referensi ke tabel orders</td></tr>
+        <tr><td>amount</td><td>DECIMAL</td><td>Jumlah pembayaran</td></tr>
+        <tr><td>method</td><td>TEXT</td><td>Metode: cash / qris</td></tr>
+        <tr><td>status</td><td>TEXT</td><td>Status: pending / completed / failed / refunded</td></tr>
+        <tr><td>proof_url</td><td>TEXT</td><td>URL bukti pembayaran QRIS</td></tr>
+        <tr><td>validated_by</td><td>UUID (FK)</td><td>Referensi ke kasir yang memvalidasi</td></tr>
+        <tr><td>validated_at</td><td>TIMESTAMPTZ</td><td>Waktu validasi pembayaran</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-sub-bab">3.4.2 Fitur-Fitur Sistem yang Diimplementasikan</h3>
+  <p>Sistem Waroeng RCM Kang Abuy memiliki tiga modul utama dengan fitur-fitur sebagai berikut:</p>
+
+  <p><strong>A. Modul Pelanggan (Customer Interface)</strong></p>
+  <ol>
+    <li>Halaman beranda (<em>landing page</em>) dengan informasi warung, banner promosi, dan galeri;</li>
+    <li>Halaman menu digital dengan filter berdasarkan kategori dan pencarian;</li>
+    <li>Fitur pemesanan via QR Code meja (<em>self-ordering</em>);</li>
+    <li>Manajemen keranjang belanja (<em>cart management</em>);</li>
+    <li>Proses <em>checkout</em> dengan opsi login (Google / OTP WhatsApp) atau tamu (<em>guest</em>);</li>
+    <li>Pelacakan status pesanan secara <em>real-time</em>;</li>
+    <li>Riwayat pesanan dan item favorit;</li>
+    <li>Sistem voucher diskon dan program keanggotaan (<em>membership</em>).</li>
+  </ol>
+
+  <p><strong>B. Modul Kasir (Cashier Dashboard)</strong></p>
+  <ol>
+    <li>Sistem POS (<em>Point of Sale</em>) untuk input pesanan manual;</li>
+    <li>Manajemen pesanan masuk dari pelanggan;</li>
+    <li>Pemrosesan pembayaran tunai dan QRIS;</li>
+    <li>Pemantauan status meja secara <em>real-time</em>;</li>
+    <li>Manajemen antrian <em>takeaway</em>;</li>
+    <li>Riwayat transaksi harian;</li>
+    <li>Fitur <em>daily closing</em> (tutup kasir) dengan laporan rekap harian;</li>
+    <li>Cetak struk digital.</li>
+  </ol>
+
+  <p><strong>C. Modul Admin (Owner Dashboard)</strong></p>
+  <ol>
+    <li>Dasbor utama dengan monitoring pendapatan secara <em>real-time</em>;</li>
+    <li>Manajemen menu dan kategori (tambah, ubah, hapus);</li>
+    <li>Manajemen promosi dan voucher diskon;</li>
+    <li>Manajemen meja dan generasi QR Code tiap meja;</li>
+    <li>Manajemen akun kasir dan pelanggan;</li>
+    <li>Laporan analitik penjualan dan pendapatan;</li>
+    <li>CMS (<em>Content Management System</em>) untuk mengelola konten website tanpa koding;</li>
+    <li>Pengaturan pembayaran QRIS.</li>
+  </ol>
+</div>
+
+<!-- PAGE: PENGUJIAN -->
+<div class="page page-break">
+  <h2 class="sub-bab">3.5 Pengujian Sistem</h2>
+  <p>Pengujian sistem dilakukan menggunakan metode <em>Black Box Testing</em>. Metode ini menguji fungsionalitas sistem dari perspektif pengguna tanpa memperhatikan struktur kode internal. Setiap skenario pengujian dievaluasi berdasarkan kesesuaian antara keluaran yang diharapkan (<em>expected output</em>) dengan keluaran yang dihasilkan sistem (<em>actual output</em>).</p>
+
+  <h3 class="sub-sub-bab">3.5.1 Pengujian Modul Autentikasi</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.10 Hasil Pengujian Black Box – Modul Autentikasi</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%;">No</th>
+          <th style="width:25%;">Skenario Pengujian</th>
+          <th style="width:30%;">Data Input</th>
+          <th style="width:25%;">Hasil yang Diharapkan</th>
+          <th style="width:15%;">Hasil Pengujian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Login dengan akun admin yang valid</td><td>Email & password admin yang terdaftar</td><td>Redirect ke halaman Admin Dashboard</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">2</td><td>Login dengan akun kasir yang valid</td><td>Email & password kasir</td><td>Redirect ke halaman Kasir Dashboard</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">3</td><td>Login dengan password yang salah</td><td>Email benar, password salah</td><td>Tampil pesan error "Login Gagal"</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">4</td><td>Register akun pelanggan baru</td><td>Nama, email, password valid</td><td>Akun berhasil dibuat, redirect ke halaman utama</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">5</td><td>Login pelanggan via Google OAuth</td><td>Akun Google valid</td><td>Berhasil login dengan data profil Google</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">6</td><td>Logout dari sistem</td><td>Klik tombol logout</td><td>Sesi berakhir, redirect ke halaman login</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">7</td><td>Akses halaman admin tanpa login</td><td>URL /admin diakses langsung</td><td>Redirect ke halaman login</td><td class="center">✅ Berhasil</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-sub-bab">3.5.2 Pengujian Modul Pelanggan (QR & Pemesanan)</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.11 Hasil Pengujian Black Box – Modul Pelanggan (QR & Pemesanan)</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%;">No</th>
+          <th style="width:25%;">Skenario Pengujian</th>
+          <th style="width:30%;">Data Input</th>
+          <th style="width:25%;">Hasil yang Diharapkan</th>
+          <th style="width:15%;">Hasil Pengujian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Scan QR Code meja</td><td>Scan QR Code meja A1</td><td>Redirect ke halaman menu dengan nomor meja A1 terisi otomatis</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">2</td><td>Lihat menu digital berdasarkan kategori</td><td>Klik kategori "Makanan Berat"</td><td>Tampil daftar menu sesuai kategori yang dipilih</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">3</td><td>Tambahkan item ke keranjang</td><td>Pilih "Nasi Goreng" qty 2</td><td>Item masuk ke keranjang dengan total harga yang benar</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">4</td><td>Hapus item dari keranjang</td><td>Klik icon hapus pada item</td><td>Item terhapus dari keranjang, total harga diperbarui</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">5</td><td>Proses checkout sebagai tamu</td><td>Nama "Ahmad", No HP valid</td><td>Pesanan berhasil dibuat, muncul halaman konfirmasi pesanan</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">6</td><td>Pembayaran via QRIS</td><td>Upload bukti transfer QRIS valid</td><td>Bukti berhasil diunggah, pesanan menunggu konfirmasi kasir</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">7</td><td>Lacak status pesanan real-time</td><td>Buka halaman pelacakan pesanan</td><td>Status pesanan berubah otomatis (pending → processing → ready)</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">8</td><td>Gunakan kode voucher diskon</td><td>Kode voucher "PROMO10"</td><td>Diskon berhasil diterapkan, total harga berkurang sesuai nilai voucher</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">9</td><td>Tambahkan item ke favorit</td><td>Klik icon hati pada menu</td><td>Item tersimpan di halaman Favorit</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">10</td><td>Lihat riwayat pesanan</td><td>Buka halaman Riwayat Pesanan</td><td>Tampil daftar pesanan sebelumnya dengan detail lengkap</td><td class="center">✅ Berhasil</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: PENGUJIAN KASIR & ADMIN -->
+<div class="page page-break">
+  <h3 class="sub-sub-bab">3.5.3 Pengujian Modul Kasir</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.12 Hasil Pengujian Black Box – Modul Kasir</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%;">No</th>
+          <th style="width:25%;">Skenario Pengujian</th>
+          <th style="width:30%;">Data Input</th>
+          <th style="width:25%;">Hasil yang Diharapkan</th>
+          <th style="width:15%;">Hasil Pengujian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Input pesanan manual via POS</td><td>Pilih menu via sistem POS</td><td>Pesanan berhasil dibuat dan masuk ke antrian</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">2</td><td>Konfirmasi pembayaran tunai</td><td>Klik "Konfirmasi Bayar" pada pesanan</td><td>Status pesanan berubah menjadi "Completed"</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">3</td><td>Validasi pembayaran QRIS</td><td>Review & approve bukti QRIS</td><td>Pembayaran tervalidasi, status pesanan diperbarui</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">4</td><td>Ubah status pesanan</td><td>Ubah status ke "Processing"</td><td>Status berubah dan pelanggan menerima notifikasi real-time</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">5</td><td>Monitor status meja</td><td>Buka halaman Table Monitoring</td><td>Tampil status semua meja secara real-time (tersedia/terisi)</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">6</td><td>Kelola antrian takeaway</td><td>Buka halaman Antrian Takeaway</td><td>Tampil antrian nomor takeaway, dapat diperbarui statusnya</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">7</td><td>Proses daily closing</td><td>Input total uang fisik di laci</td><td>Sistem menghitung selisih dan menyimpan laporan tutup kasir</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">8</td><td>Lihat riwayat transaksi</td><td>Buka halaman Transaction History</td><td>Tampil daftar transaksi dengan filter tanggal dan status</td><td class="center">✅ Berhasil</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-sub-bab">3.5.4 Pengujian Modul Admin</h3>
+  <div class="table-wrapper avoid-break">
+    <p class="table-caption">Tabel 3.13 Hasil Pengujian Black Box – Modul Admin</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%;">No</th>
+          <th style="width:25%;">Skenario Pengujian</th>
+          <th style="width:30%;">Data Input</th>
+          <th style="width:25%;">Hasil yang Diharapkan</th>
+          <th style="width:15%;">Hasil Pengujian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Tambah menu baru</td><td>Nama, harga, kategori, gambar menu</td><td>Menu berhasil disimpan dan tampil di halaman pelanggan</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">2</td><td>Edit harga menu</td><td>Ubah harga menu yang ada</td><td>Harga terupdate di database dan langsung terlihat pelanggan</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">3</td><td>Nonaktifkan menu (habis)</td><td>Toggle status "Tidak Tersedia"</td><td>Menu tidak muncul di halaman pelanggan</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">4</td><td>Tambah kategori menu</td><td>Nama kategori & gambar</td><td>Kategori baru tersedia dan dapat diisi dengan menu</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">5</td><td>Generate QR Code meja baru</td><td>Nomor meja & kapasitas</td><td>QR Code berhasil digenerate dan dapat diunduh/dicetak</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">6</td><td>Buat voucher diskon</td><td>Kode voucher, jenis, nilai, batas waktu</td><td>Voucher aktif dan dapat digunakan pelanggan saat checkout</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">7</td><td>Tambah akun kasir baru</td><td>Nama, email, password kasir</td><td>Akun kasir berhasil dibuat dengan role "kasir"</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">8</td><td>Lihat laporan analitik penjualan</td><td>Pilih rentang tanggal laporan</td><td>Tampil grafik dan tabel penjualan sesuai periode yang dipilih</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">9</td><td>Edit konten website via CMS</td><td>Ubah tagline dan banner website</td><td>Perubahan langsung terlihat di halaman publik</td><td class="center">✅ Berhasil</td></tr>
+        <tr><td class="center">10</td><td>Upload gambar QRIS pembayaran</td><td>File gambar QRIS valid</td><td>Gambar QRIS berhasil diupload dan tampil saat checkout</td><td class="center">✅ Berhasil</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box">
+    <strong>Ringkasan Hasil Pengujian:</strong> Dari total 35 skenario pengujian yang dilakukan menggunakan metode <em>Black Box Testing</em>, seluruh skenario (<strong>35/35 = 100%</strong>) berhasil berjalan sesuai dengan hasil yang diharapkan. Hal ini menunjukkan bahwa sistem yang dibangun berfungsi dengan baik dan memenuhi seluruh kebutuhan fungsional yang telah ditetapkan.
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- BAB IV: KESIMPULAN DAN SARAN                                      -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="bab">BAB IV<br>KESIMPULAN DAN SARAN</h1>
+
+  <h2 class="sub-bab">4.1 Kesimpulan</h2>
+  <p>Berdasarkan kegiatan Kerja Praktek yang telah dilaksanakan dalam perancangan dan pembangunan <em>Website Menu Digital Berbasis QR Code untuk Warung RCM Kang Abuy</em>, dapat ditarik kesimpulan sebagai berikut:</p>
+
+  <ol>
+    <li>
+      <p>Sistem website menu digital berbasis QR Code berhasil dirancang dan dibangun dengan menggunakan teknologi React.js 18, Vite, Tailwind CSS, dan Supabase. Sistem ini memungkinkan pelanggan untuk memindai QR Code pada meja masing-masing, melihat menu digital secara interaktif, serta melakukan pemesanan secara mandiri (<em>self-ordering</em>) tanpa perlu memanggil pelayan.</p>
+    </li>
+    <li>
+      <p>Sistem manajemen terintegrasi yang mencakup tiga modul utama—Admin Dashboard, Kasir Dashboard (POS), dan Customer Interface—berhasil diimplementasikan. Admin dapat mengelola seluruh aspek operasional warung secara digital, mulai dari menu, meja, promosi, hingga laporan keuangan. Kasir dapat memproses transaksi, memvalidasi pembayaran QRIS, dan melakukan tutup kasir secara digital.</p>
+    </li>
+    <li>
+      <p>Fitur pembaruan status pesanan secara <em>real-time</em> berhasil diimplementasikan menggunakan Supabase Realtime, sehingga pelanggan dapat memantau perkembangan pesanan mereka secara langsung tanpa perlu me-refresh halaman.</p>
+    </li>
+    <li>
+      <p>Pengujian sistem menggunakan metode <em>Black Box Testing</em> terhadap 35 skenario pengujian yang mencakup seluruh modul sistem menunjukkan hasil <strong>100% berhasil</strong>, yang membuktikan bahwa sistem telah memenuhi seluruh kebutuhan fungsional yang diidentifikasi selama analisis kebutuhan.</p>
+    </li>
+    <li>
+      <p>Implementasi sistem ini berhasil menggantikan proses manual yang sebelumnya berjalan di Warung RCM Kang Abuy, meliputi penggantian menu kertas dengan menu digital, eliminasi pencatatan pesanan manual yang rentan <em>human error</em>, penambahan metode pembayaran digital QRIS, serta penyediaan data analitik penjualan yang otomatis dan akurat.</p>
+    </li>
+  </ol>
+
+  <h2 class="sub-bab">4.2 Saran</h2>
+  <p>Meskipun sistem yang dibangun telah berfungsi dengan baik, terdapat beberapa saran untuk pengembangan sistem lebih lanjut di masa mendatang:</p>
+
+  <ol>
+    <li>
+      <strong>Penambahan Fitur Pembayaran Digital yang Lebih Beragam:</strong>
+      <p>Sistem saat ini mendukung QRIS dan tunai. Ke depannya dapat diintegrasikan dengan <em>payment gateway</em> seperti Midtrans atau Xendit untuk mendukung pembayaran via transfer bank, dompet digital (GoPay, OVO, DANA), dan kartu debit/kredit secara otomatis tanpa perlu validasi manual oleh kasir.</p>
+    </li>
+    <li>
+      <strong>Penambahan Fitur Notifikasi Push kepada Kasir dan Dapur:</strong>
+      <p>Untuk meningkatkan responsivitas dapur, dapat ditambahkan fitur notifikasi <em>push notification</em> atau notifikasi suara yang langsung diterima oleh tim dapur ketika ada pesanan baru masuk, sehingga pesanan dapat diproses lebih cepat.</p>
+    </li>
+    <li>
+      <strong>Penambahan Dashboard Laporan Penjualan yang Lebih Lengkap:</strong>
+      <p>Laporan keuangan dapat dikembangkan dengan menambahkan fitur ekspor laporan ke format Excel atau PDF, serta visualisasi data yang lebih lengkap seperti tren penjualan mingguan/bulanan, menu terlaris per periode, dan analisis jam sibuk operasional.</p>
+    </li>
+    <li>
+      <strong>Pengembangan Aplikasi Mobile Native:</strong>
+      <p>Untuk memberikan pengalaman pengguna yang lebih baik, terutama bagi admin dan kasir, dapat dikembangkan aplikasi mobile berbasis React Native atau Flutter yang dapat diakses secara offline dan mendukung notifikasi <em>push</em> secara native.</p>
+    </li>
+    <li>
+      <strong>Integrasi dengan Platform Pesan Antar Online:</strong>
+      <p>Sistem dapat dikembangkan untuk terintegrasi dengan platform pesan antar seperti GoFood dan GrabFood, sehingga pesanan dari platform tersebut dapat langsung masuk ke dalam sistem manajemen warung secara terpusat.</p>
+    </li>
+    <li>
+      <strong>Penambahan Fitur Ulasan dan Rating Menu:</strong>
+      <p>Penambahan sistem ulasan dan penilaian menu oleh pelanggan setelah transaksi dapat membantu pemilik dalam mengidentifikasi menu yang perlu ditingkatkan kualitasnya dan mengetahui tingkat kepuasan pelanggan secara langsung.</p>
+    </li>
+    <li>
+      <strong>Implementasi Pengujian Beban (Load Testing):</strong>
+      <p>Untuk memastikan sistem dapat menangani lonjakan pengunjung pada jam sibuk, disarankan untuk dilakukan pengujian beban (<em>load testing</em>) menggunakan tool seperti Apache JMeter atau k6 sebelum sistem digunakan secara penuh dalam skala besar.</p>
+    </li>
+  </ol>
+</div>
+
+<!-- ================================================================ -->
+<!-- DAFTAR PUSTAKA                                                    -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="section-title-roman">DAFTAR PUSTAKA</h1>
+
+  <p class="no-indent">Abubakar, A., & Widianti, T. (2022). Rancang Bangun Sistem Informasi Pemesanan Makanan Berbasis Web pada Restoran dengan Metode <em>Agile</em>. <em>Jurnal Teknologi Informasi dan Ilmu Komputer (JTIIK)</em>, 9(3), 567–576. https://doi.org/10.25126/jtiik.202293789</p>
+
+  <p class="no-indent">Adi, P. P., & Rahmawati, D. (2023). Implementasi QR Code pada Sistem Pemesanan Makanan untuk Meningkatkan Efisiensi Layanan Restoran. <em>Jurnal Sistem Informasi dan Teknologi (JSIT)</em>, 5(1), 45–54.</p>
+
+  <p class="no-indent">Anwar, S., & Febrianti, R. (2022). Digitalisasi UMKM Kuliner Melalui Aplikasi Pemesanan Berbasis QR Code. <em>Jurnal Informatika dan Rekayasa Perangkat Lunak (JIRPL)</em>, 4(2), 112–121.</p>
+
+  <p class="no-indent">Chen, Y., & Xu, M. (2021). Impact of QR Code-Based Mobile Ordering Systems on Restaurant Service Efficiency: A Case Study. <em>International Journal of Hospitality Management</em>, 94, 102841. https://doi.org/10.1016/j.ijhm.2021.102841</p>
+
+  <p class="no-indent">Denso Wave Incorporated. (2023). <em>QR Code Essentials</em>. Denso Wave. https://www.qrcode.com/en/about/</p>
+
+  <p class="no-indent">Fadilah, N., Saputra, M., & Hidayat, R. (2023). Pengembangan Sistem Manajemen Restoran Berbasis Web Menggunakan React.js dan Firebase. <em>Jurnal Pengembangan Teknologi Informasi dan Ilmu Komputer</em>, 7(4), 1823–1834.</p>
+
+  <p class="no-indent">Hariyanto, B. (2022). <em>Rekayasa Sistem Berorientasi Objek</em>. Informatika Bandung.</p>
+
+  <p class="no-indent">Kemenkop UKM. (2023). <em>Roadmap Pengembangan UMKM Digital Indonesia 2023–2027</em>. Kementerian Koperasi dan Usaha Kecil dan Menengah Republik Indonesia.</p>
+
+  <p class="no-indent">Kristanto, A., & Nugroho, T. (2022). Sistem Informasi Restoran dengan Fitur Self-Ordering Menggunakan QR Code Berbasis Progressive Web App. <em>Jurnal EDUKASI dan PENELITIAN INFORMATIKA (JEPIN)</em>, 8(2), 298–307.</p>
+
+  <p class="no-indent">Meta Open Source. (2024). <em>React – The Library for Web and Native User Interfaces</em>. Meta Platforms, Inc. https://react.dev/</p>
+
+  <p class="no-indent">Naufal, M. F., & Suhartini, S. (2023). Perancangan Sistem Pemesanan Makanan Online Berbasis Mobile dengan QR Code untuk Meningkatkan Pelayanan UMKM. <em>Jurnal Ilmu Komputer dan Agri-Informatika (JIKA)</em>, 10(1), 33–42.</p>
+
+  <p class="no-indent">Pressman, R. S., & Maxim, B. R. (2020). <em>Software Engineering: A Practitioner's Approach</em> (9th ed.). McGraw-Hill Education.</p>
+
+  <p class="no-indent">Supabase, Inc. (2024). <em>Supabase Documentation – The Open Source Firebase Alternative</em>. https://supabase.com/docs</p>
+
+  <p class="no-indent">Syarif, M. A., Wijaya, K., & Kusuma, A. (2022). Analisis Pengaruh Implementasi Sistem Pemesanan Digital Berbasis QR Code terhadap Kepuasan Pelanggan Restoran. <em>Jurnal Manajemen Teknologi</em>, 21(3), 289–305.</p>
+
+  <p class="no-indent">Vercel Inc. (2024). <em>Vercel Platform Documentation</em>. https://vercel.com/docs</p>
+
+  <p class="no-indent">Wicaksono, A., & Pratama, B. (2023). Rancang Bangun Aplikasi Point of Sale (POS) Berbasis Web untuk Usaha Kuliner Menggunakan Framework React. <em>Jurnal Nasional Teknik Elektro dan Teknologi Informasi (JNTETI)</em>, 12(2), 145–153. https://doi.org/10.22146/jnteti.v12i2.6012</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- LAMPIRAN                                                          -->
+<!-- ================================================================ -->
+<div class="page page-break">
+  <h1 class="section-title-roman">LAMPIRAN</h1>
+  <h2 class="sub-bab">Lampiran 1. Dokumentasi Kegiatan Kerja Praktek</h2>
+
+  <p>Berikut adalah dokumentasi foto kegiatan Kerja Praktek yang dilaksanakan di Warung RCM Kang Abuy:</p>
+
+  <div class="table-wrapper avoid-break">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%;">No</th>
+          <th style="width:30%;">Kegiatan</th>
+          <th style="width:30%;">Tanggal</th>
+          <th style="width:30%;">Keterangan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>Survei Lokasi Awal</td>
+          <td class="center"><span class="placeholder">[Tanggal]</span></td>
+          <td>Observasi lokasi dan proses operasional warung</td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td>Wawancara Pemilik</td>
+          <td class="center"><span class="placeholder">[Tanggal]</span></td>
+          <td>Pengumpulan kebutuhan sistem (<em>requirement gathering</em>)</td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td>Proses Pengembangan Aplikasi</td>
+          <td class="center"><span class="placeholder">[Periode]</span></td>
+          <td>Pengembangan sistem di kampus dan lokasi KP</td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td>Demo & Pengujian Sistem</td>
+          <td class="center"><span class="placeholder">[Tanggal]</span></td>
+          <td>Presentasi dan uji coba sistem bersama pemilik warung</td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td>Pemasangan QR Code di Meja</td>
+          <td class="center"><span class="placeholder">[Tanggal]</span></td>
+          <td>Instalasi QR Code pada seluruh meja warung</td>
+        </tr>
+        <tr>
+          <td class="center">6</td>
+          <td>Foto Bersama Pemilik & Tim</td>
+          <td class="center"><span class="placeholder">[Tanggal]</span></td>
+          <td>Dokumentasi akhir kegiatan Kerja Praktek</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box" style="margin-top:20px;">
+    <strong>📌 Catatan:</strong> Tempelkan foto dokumentasi kegiatan KP di bawah ini. Setiap foto sebaiknya disertai keterangan singkat mengenai kegiatan yang sedang berlangsung.
+  </div>
+
+  <!-- Placeholder foto -->
+  <div style="margin-top:24px;">
+    <div style="border: 2px dashed #d97706; background:#fffbeb; height:200px; display:flex; align-items:center; justify-content:center; border-radius:8px; margin-bottom:16px; color:#92400e; font-style:italic; text-align:center; padding:20px;">
+      📷 [Tempelkan foto survei lokasi / wawancara pemilik di sini]<br>
+      <small>Keterangan: Survei lokasi Warung RCM Kang Abuy, [Tanggal]</small>
+    </div>
+    <div style="border: 2px dashed #d97706; background:#fffbeb; height:200px; display:flex; align-items:center; justify-content:center; border-radius:8px; margin-bottom:16px; color:#92400e; font-style:italic; text-align:center; padding:20px;">
+      📷 [Tempelkan foto proses pengembangan aplikasi / demo sistem di sini]<br>
+      <small>Keterangan: Demo sistem website menu digital kepada pemilik warung, [Tanggal]</small>
+    </div>
+    <div style="border: 2px dashed #d97706; background:#fffbeb; height:200px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#92400e; font-style:italic; text-align:center; padding:20px;">
+      📷 [Tempelkan foto bersama pemilik UMKM / pemasangan QR Code di sini]<br>
+      <small>Keterangan: Foto bersama pemilik Warung RCM Kang Abuy setelah selesai KP, [Tanggal]</small>
+    </div>
+  </div>
+
+  <br>
+  <h2 class="sub-bab">Lampiran 2. Source Code Utama Sistem</h2>
+  <p>Kode sumber sistem tersimpan di repositori GitHub berikut:</p>
+  <div class="info-box">
+    <strong>Repository:</strong> <span class="placeholder">[URL GitHub Repository]</span><br>
+    <strong>Demo Live:</strong> <span class="placeholder">[URL Deployment di Vercel]</span><br>
+    <strong>Tech Stack:</strong> React 18 + Vite + Tailwind CSS + Supabase + Vercel
+  </div>
+</div>
+
+</div><!-- end .document -->
+
+<script>
+// Auto-highlight placeholders on load
+document.addEventListener('DOMContentLoaded', () => {
+  const count = document.querySelectorAll('.placeholder').length;
+  const banner = document.createElement('div');
+  banner.className = 'no-print';
+  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#fef9c3;border-top:2px solid #d97706;padding:8px 20px;font-family:Segoe UI,sans-serif;font-size:12px;color:#92400e;z-index:998;display:flex;align-items:center;gap:12px;';
+  banner.innerHTML = `⚠️ <strong>Terdapat ${count} placeholder</strong> yang perlu Anda isi sebelum mencetak. Teks berwarna kuning adalah placeholder. Klik teks tersebut untuk mengeditnya langsung.`;
+  document.body.appendChild(banner);
+
+  // Make placeholders editable on click
+  document.querySelectorAll('.placeholder').forEach(el => {
+    el.title = 'Klik untuk mengedit';
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      const val = prompt('Masukkan teks pengganti:', el.textContent);
+      if (val !== null) {
+        el.textContent = val;
+        el.classList.remove('placeholder');
+        el.style.background = '';
+        el.style.border = '';
+        el.style.color = '';
+        el.style.padding = '';
+        el.style.fontStyle = '';
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>

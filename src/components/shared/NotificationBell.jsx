@@ -6,6 +6,7 @@ import { useRealtimeNotifications } from '../../hooks/useRealtime'
 import useAuthStore from '../../stores/authStore'
 import { formatDateTime } from '../../utils/format'
 import { useNavigate } from 'react-router-dom'
+import { playNotificationByType } from '../../utils/sound'
 
 export default function NotificationBell() {
   const { user } = useAuthStore()
@@ -21,6 +22,8 @@ export default function NotificationBell() {
   useRealtimeNotifications(user?.id, (newNotification) => {
     setNotifications(prev => [newNotification, ...prev])
     setUnreadCount(prev => prev + 1)
+    // Play suara sesuai tipe notifikasi
+    playNotificationByType(newNotification.type)
   })
 
   const loadNotifications = async () => {

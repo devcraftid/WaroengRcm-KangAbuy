@@ -7,10 +7,21 @@ const useCartStore = create(
       items: [],
       tableId: null,
       orderType: 'dine_in', // dine_in, takeaway_waiting, takeaway_pickup
+
+      // Info pemesan (untuk guest maupun member)
+      guestName: '',
+      guestPhone: '',
+      guestNotes: '',
       
       setTableId: (tableId) => set({ tableId }),
       
       setOrderType: (orderType) => set({ orderType }),
+
+      setGuestInfo: ({ name, phone, notes }) => set({
+        guestName: name || '',
+        guestPhone: phone || '',
+        guestNotes: notes || ''
+      }),
       
       addItem: (item) => {
         const items = get().items
@@ -46,7 +57,14 @@ const useCartStore = create(
         })
       },
       
-      clearCart: () => set({ items: [], tableId: null, orderType: 'dine_in' }),
+      clearCart: () => set({
+        items: [],
+        tableId: null,
+        orderType: 'dine_in',
+        guestName: '',
+        guestPhone: '',
+        guestNotes: ''
+      }),
       
       getTotal: () => {
         return get().items.reduce((total, item) => total + (item.price * item.quantity), 0)
