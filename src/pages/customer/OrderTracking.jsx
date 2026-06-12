@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { 
   Clock, CheckCircle, ChefHat, Package, ShoppingBag,
   ArrowLeft, MapPin, Banknote, QrCode,
-  AlertCircle, CreditCard
+  AlertCircle, Upload, Image as ImageIcon, Eye
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency, formatDateTime } from '../../utils/format'
@@ -18,7 +18,7 @@ export default function OrderTracking() {
   const [payment, setPayment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showProofModal, setShowProofModal] = useState(false)
-  const [midtransLoading, setMidtransLoading] = useState(false)
+  const [uploadingProof, setUploadingProof] = useState(false)
 
   useEffect(() => {
     if (id) loadOrder()
@@ -92,92 +92,81 @@ export default function OrderTracking() {
     }
   }
 
-  // Inject Midtrans Snap script on mount
-  useEffect(() => {
-    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
-    // Otomatis deteksi production jika key tidak berawalan SB-
-    const isProduction = clientKey && !clientKey.startsWith('SB-');
-    const scriptUrl = isProduction 
-      ? 'https://app.midtrans.com/snap/snap.js'
-      : 'https://app.sandbox.midtrans.com/snap/snap.js';
-      
-    if (clientKey && !document.getElementById('midtrans-script')) {
-      const script = document.createElement('script');
-      script.id = 'midtrans-script';
-      script.src = scriptUrl;
-      script.setAttribute('data-client-key', clientKey);
-      script.async = true;
-      document.body.appendChild(script);
+  // ============================================
+  // MANUAL PAYMENT (UPLOAD BUKTI)
+  // ============================================
+  const handleUploadProof = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validasi ukuran (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ukuran file maksimal 5MB')
+      return
     }
-  }, []);
 
-  // ============================================
-  // MIDTRANS INTEGRATION
-  // ============================================
-  const handlePayMidtrans = async () => {
-    if (!order || !payment) return
     try {
-      setMidtransLoading(true)
+      setUploadingProof(true)
       
-      const { data: items } = await supabase
-        .from('order_items')
-        .select(`
-          *,
-          menus (name)
-        `)
-        .eq('order_id', order.id)
+      // Karena kita butuh storage, untuk saat ini jika bucket tidak ada,
+      // kita konversi ke base64 agar aman (atau idealnya upload ke bucket 'payment_proofs')
+      // Kita coba upload ke storage terlebih dahulu
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${order.id}-${Math.random()}.${fileExt}`
+      const filePath = `${fileName}`
 
-      const snapRes = await fetch('/api/midtrans-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: order.id,
-          gross_amount: payment.amount,
-          customer_details: {
-            first_name: order.customer_name || 'Guest',
-            phone: order.customer_phone || '-'
-          },
-          items: items?.map(i => ({
-            id: i.menu_id,
-            price: i.price,
-            quantity: i.quantity,
-            name: i.menus?.name?.substring(0, 50) || 'Item'
-          })) || []
-        })
-      })
+      // Coba upload ke bucket Supabase
+      const { error: uploadError, data } = await supabase.storage
+        .from('payment_proofs')
+        .upload(filePath, file)
 
-      const snapData = await snapRes.json()
-      if (snapData.token) {
-        if (!window.snap) {
-          toast.error('Gagal memuat sistem pembayaran. Coba refresh halaman.')
-          return
-        }
-        window.snap.pay(snapData.token, {
-          onSuccess: function() {
-            toast.success('Pembayaran berhasil!')
-            loadPayment()
-            loadOrder()
-          },
-          onPending: function() {
-            toast.info('Menunggu pembayaran diselesaikan...')
-            loadPayment()
-            loadOrder()
-          },
-          onError: function() {
-            toast.error('Pembayaran gagal')
-          },
-          onClose: function() {
-            toast.error('Pembayaran belum diselesaikan')
-          }
+      let proofUrl = ''
+      
+      if (uploadError) {
+        // Jika gagal karena bucket tidak ada, fallback ke base64
+        console.warn('Gagal upload ke storage (mungkin bucket tidak ada), fallback ke base64', uploadError)
+        const reader = new FileReader()
+        proofUrl = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result)
+          reader.readAsDataURL(file)
         })
       } else {
-        throw new Error(snapData.error || 'Gagal mendapatkan token')
+        // Jika berhasil
+        const { data: { publicUrl } } = supabase.storage
+          .from('payment_proofs')
+          .getPublicUrl(filePath)
+        proofUrl = publicUrl
       }
-    } catch (err) {
-      console.error('Midtrans error:', err)
-      toast.error('Gagal memuat pembayaran online: ' + err.message)
+
+      // Update tabel payments
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({ 
+          proof_url: proofUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', payment.id)
+
+      if (updateError) throw updateError
+
+      // Kirim notifikasi ke kasir
+      await supabase.from('notifications').insert({
+        user_id: null,
+        title: 'Bukti Transfer Diupload 💸',
+        message: `Order #${order.id.slice(0, 8)} telah mengupload bukti transfer. Segera validasi!`,
+        type: 'payment_proof',
+        link: `/cashier/payment/${order.id}`
+      })
+
+      toast.success('Bukti transfer berhasil diupload!')
+      setShowProofModal(false)
+      loadPayment()
+
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Gagal mengupload bukti transfer')
     } finally {
-      setMidtransLoading(false)
+      setUploadingProof(false)
     }
   }
 
@@ -342,28 +331,65 @@ export default function OrderTracking() {
                 </div>
               )}
 
-              {/* Midtrans Button */}
+              {/* Bukti Pembayaran / Upload */}
               {payment?.method === 'qris' && payment?.status === 'pending' && (
-                <div className="mt-6">
-                  <button 
-                    onClick={handlePayMidtrans}
-                    disabled={midtransLoading}
-                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2"
-                  >
-                    {midtransLoading ? (
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    ) : (
-                      <>
-                        <CreditCard className="w-5 h-5" />
-                        Bayar Sekarang
-                      </>
-                    )}
-                  </button>
+                <div className="mt-4 bg-white p-4 rounded-xl border border-gray-100 flex flex-col items-center">
+                  {!payment.proof_url ? (
+                    <>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Scan QRIS Berikut</p>
+                      <div className="bg-white p-2 rounded-xl shadow-sm mb-4 border-2 border-orange-100">
+                        <img src="https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/qris/1780557685955-o1yjhm.jpg" alt="QRIS" className="w-48 h-48 object-contain rounded-lg" />
+                      </div>
+                      
+                      <div className="w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-orange-300 rounded-xl cursor-pointer bg-orange-50 hover:bg-orange-100 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {uploadingProof ? (
+                              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <Upload className="w-6 h-6 text-orange-500 mb-2" />
+                                <p className="text-sm font-semibold text-orange-700">Upload Bukti Transfer</p>
+                              </>
+                            )}
+                          </div>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleUploadProof} disabled={uploadingProof} />
+                        </label>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full text-center">
+                      <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <ImageIcon className="w-8 h-8" />
+                      </div>
+                      <p className="font-semibold text-gray-900">Bukti Telah Diupload</p>
+                      <p className="text-xs text-gray-500 mb-4">Menunggu kasir melakukan validasi.</p>
+                      
+                      <button onClick={() => setShowProofModal(true)} className="flex items-center justify-center gap-2 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+                        <Eye className="w-4 h-4" /> Lihat Bukti
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* Modal Lihat Bukti */}
+        {showProofModal && payment?.proof_url && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowProofModal(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl max-w-sm w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 className="font-bold text-gray-900">Bukti Pembayaran</h3>
+                <button onClick={() => setShowProofModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              </div>
+              <div className="p-4 bg-gray-100">
+                <img src={payment.proof_url} alt="Bukti Transfer" className="w-full rounded-xl shadow-sm max-h-[60vh] object-contain bg-white" />
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* ORDER PROGRESS */}
         {/* ============================================ */}
