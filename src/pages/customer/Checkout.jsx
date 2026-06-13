@@ -155,7 +155,7 @@ export default function Checkout() {
         title: 'Order Baru! 🔔',
         message: `${customerName.trim()} - Order #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod.toUpperCase()}${orderTypeState === 'dine_in' ? ` - Meja ${tableNumber}` : ' - Takeaway'}. Perlu pembayaran.`,
         type: 'order_created',
-        link: `/cashier/payment/${order.id}`
+        link: `/admin/payment/${order.id}`
       })
 
       // 6. NOTIFIKASI KE CUSTOMER
@@ -169,13 +169,7 @@ export default function Checkout() {
         })
       }
 
-      // 7. Activity log
-      await supabase.from('activities').insert({
-        user_id: user?.id || null,
-        description: `Order baru #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod}`,
-        type: 'order_created'
-      })
-
+      // Activity log dihapus karena tabel tidak digunakan lagi
       console.log('✅ Checkout complete! Menunggu pembayaran.')
       
       // Baik Cash maupun QRIS akan langsung diredirect ke halaman Tracking.

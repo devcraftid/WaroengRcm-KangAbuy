@@ -55,14 +55,13 @@ export default function Contact() {
       await new Promise(resolve => setTimeout(resolve, 1500))
       
       // Send notification to admin
-      if (settings?.email) {
-        await supabase.from('notifications').insert({
-          user_id: null, // Admin notification
-          title: 'Pesan Baru dari Contact Form',
-          message: `Dari: ${form.name}\nEmail: ${form.email}\nPesan: ${form.message}`,
-          type: 'contact_form'
-        })
-      }
+      await supabase.from('notifications').insert({
+        user_id: null, // Admin notification
+        title: 'Pesan Baru dari Contact Form',
+        message: `Dari: ${form.name}\nEmail: ${form.email}\nPesan: ${form.message}`,
+        type: 'contact_form',
+        link: '/admin'
+      })
 
       toast.success('Pesan berhasil dikirim!')
       setForm({ name: '', email: '', phone: '', message: '' })
@@ -75,9 +74,10 @@ export default function Contact() {
   }
 
   const handleWhatsAppClick = () => {
-    if (settings?.whatsapp_number) {
+    const waNumber = settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number
+    if (waNumber) {
       const message = encodeURIComponent('Halo, saya ingin bertanya tentang menu...')
-      window.open(`https://wa.me/${settings.whatsapp_number}?text=${message}`, '_blank')
+      window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank')
     }
   }
 

@@ -15,7 +15,7 @@ import {
   Mail
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useRealtimeNotifications } from '../../hooks/useRealtime'
+import { useRealtimeAdminNotifications } from '../../hooks/useRealtime'
 import useAuthStore from '../../stores/authStore'
 import { formatDateTime } from '../../utils/format'
 import { toast } from 'sonner'
@@ -34,13 +34,8 @@ export default function AdminNotifications() {
     loadNotifications()
   }, [])
 
-  useRealtimeNotifications(user?.id, (newNotification) => {
+  useRealtimeAdminNotifications((newNotification) => {
     setNotifications(prev => [newNotification, ...prev])
-    // Play suara sesuai tipe notifikasi
-    playNotificationByType(newNotification.type)
-    toast.info(newNotification.title, {
-      description: newNotification.message
-    })
   })
 
   useEffect(() => {
@@ -49,10 +44,11 @@ export default function AdminNotifications() {
 
   const loadNotifications = async () => {
     try {
-      // Admin sees all notifications or can filter by type
+      // Admin sees notifications where user_id is null
       const { data } = await supabase
         .from('notifications')
         .select('*, user:profiles!user_id(full_name)')
+        .is('user_id', null)
         .order('created_at', { ascending: false })
         .limit(100)
 

@@ -95,13 +95,7 @@ export default function POS() {
         status: paymentMethod === 'cash' ? 'completed' : 'pending'
       })
 
-      // Activity
-      await supabase.from('activities').insert({
-        user_id: profile?.id,
-        description: `Order #${order.id.slice(0, 8)} - ${formatCurrency(total)}`,
-        type: 'order_created'
-      })
-
+      // Activity log dihapus karena tabel tidak digunakan lagi
       toast.success('Order berhasil!')
       setCart([])
       setTableNumber('')

@@ -132,6 +132,38 @@ export function useRealtimeNotifications(userId, callback) {
 }
 
 /**
+ * Hook for subscribing to realtime notification changes for admins
+ */
+export function useRealtimeAdminNotifications(callback) {
+  const callbackRef = useRef(callback)
+  callbackRef.current = callback
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: 'user_id=is.null'
+      }, (payload) => {
+        if (callbackRef.current) {
+          callbackRef.current(payload.new)
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Subscribed to admin notifications')
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(channel).catch(console.error)
+    }
+  }, [])
+}
+
+/**
  * Hook for subscribing to realtime activity changes
  */
 export function useRealtimeActivities(callback) {

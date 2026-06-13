@@ -29,7 +29,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 md:max-w-2xl md:mx-auto md:border-x border-gray-100 relative">
       {/* ─── SUB-HEADER ─── */}
       <div className="bg-white border-b border-gray-100 sticky top-14 z-20">
         <div className="flex items-center justify-between px-4 py-2.5">
@@ -128,7 +128,7 @@ export default function Cart() {
       </div>
 
       {/* ─── BOTTOM CHECKOUT BAR ─── */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-[480px] bg-white border-t border-gray-100"
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-[480px] md:max-w-2xl bg-white border-t border-gray-100"
            style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
         {/* Summary */}
         <div className="px-4 pt-3 pb-1">

@@ -110,20 +110,7 @@ export default function AdminDashboard() {
         .order('total_sold', { ascending: false })
         .limit(5)
 
-      // Get top customers
-      const { data: topCustomersData } = await supabase
-        .from('profiles')
-        .select('full_name, total_spent, total_orders')
-        .eq('role', 'customer')
-        .order('total_spent', { ascending: false })
-        .limit(5)
-
-      // Get recent activities
-      const { data: activitiesData } = await supabase
-        .from('activities')
-        .select('description, created_at')
-        .order('created_at', { ascending: false })
-        .limit(10)
+      // Removed Top Customers and Activities fetches
 
       setStats({
         revenueToday: todayPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0,
@@ -137,8 +124,6 @@ export default function AdminDashboard() {
         qrisTransactions: qrisCount || 0
       })
       setBestSellers(bestSellersData || [])
-      setTopCustomers(topCustomersData || [])
-      setActivities(activitiesData || [])
     } catch (error) {
       console.error('Error loading dashboard:', error)
     } finally {
@@ -170,30 +155,6 @@ export default function AdminDashboard() {
       color: 'from-orange-500 to-red-600',
       change: '+5.1%',
       changeColor: 'text-green-600'
-    },
-    {
-      title: 'Total Customer',
-      value: stats.totalCustomers,
-      icon: Users,
-      color: 'from-purple-500 to-pink-600',
-      change: '+15.3%',
-      changeColor: 'text-green-600'
-    },
-    {
-      title: 'Total Member',
-      value: stats.totalMembers,
-      icon: UserPlus,
-      color: 'from-yellow-500 to-orange-600',
-      change: '+3.7%',
-      changeColor: 'text-green-600'
-    },
-    {
-      title: 'Total Kasir',
-      value: stats.totalCashiers,
-      icon: Users,
-      color: 'from-teal-500 to-cyan-600',
-      change: '0%',
-      changeColor: 'text-gray-600'
     },
     {
       title: 'Meja Aktif',
@@ -282,7 +243,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Charts & Tables Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Best Sellers */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -313,35 +274,7 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Top Customers */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Users className="w-5 h-5 mr-2 text-blue-500" />
-            Top Customer
-          </h2>
-          {topCustomers.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">Belum ada data</p>
-          ) : (
-            <div className="space-y-4">
-              {topCustomers.map((customer, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
-                      {customer.full_name?.[0] || 'C'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{customer.full_name || 'Unknown'}</p>
-                      <p className="text-xs text-gray-500">{customer.total_orders || 0} orders</p>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(customer.total_spent || 0)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Removed Top Customers */}
 
         {/* Quick Actions */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -360,13 +293,6 @@ export default function AdminDashboard() {
             >
               <QrCode className="w-5 h-5 text-gray-600" />
               <span className="font-medium">Generate QR Meja</span>
-            </Link>
-            <Link
-              to="/admin/cashiers"
-              className="flex items-center space-x-3 w-full p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
-            >
-              <UserPlus className="w-5 h-5 text-gray-600" />
-              <span className="font-medium">Tambah Kasir</span>
             </Link>
             <Link
               to="/admin/reports"

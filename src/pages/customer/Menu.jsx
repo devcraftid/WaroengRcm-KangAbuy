@@ -21,7 +21,6 @@ export default function Menu() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [favorites, setFavorites] = useState([])
   const [quantities, setQuantities] = useState({})
 
   // Modal state
@@ -35,7 +34,6 @@ export default function Menu() {
 
   useEffect(() => {
     loadData()
-    loadFavorites()
     const itemId = searchParams.get('item')
     if (itemId) {
       setTimeout(() => {
@@ -71,21 +69,7 @@ export default function Menu() {
     }
   }
 
-  const loadFavorites = () => {
-    if (user) {
-      const stored = localStorage.getItem(`favorites_${user.id}`)
-      if (stored) setFavorites(JSON.parse(stored))
-    }
-  }
-
-  const toggleFavorite = (menuId) => {
-    if (!user) { toast.error('Login terlebih dahulu'); return }
-    const newFavs = favorites.includes(menuId)
-      ? favorites.filter(id => id !== menuId)
-      : [...favorites, menuId]
-    setFavorites(newFavs)
-    localStorage.setItem(`favorites_${user.id}`, JSON.stringify(newFavs))
-  }
+  // Load Data Menu
 
   // Buka modal detail menu
   const openAddModal = (menu) => {
@@ -222,9 +206,9 @@ export default function Menu() {
       </div>
 
       {/* ─── MENU CONTENT ─── */}
-      <div className="px-3 pt-4">
+      <div className="px-3 pt-4 md:max-w-7xl md:mx-auto w-full">
         {loading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
                 <div className="h-36 shimmer" />
@@ -246,15 +230,13 @@ export default function Menu() {
                     <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{categoryName}</p>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                   {categoryMenus.map((menu, index) => (
                     <MenuCard
                       key={menu.id}
                       menu={menu}
                       index={index}
                       quantity={quantities[menu.id] || 0}
-                      isFavorite={favorites.includes(menu.id)}
-                      onToggleFavorite={() => toggleFavorite(menu.id)}
                       onOpenModal={() => openAddModal(menu)}
                       onIncrease={() => handleIncrease(menu)}
                       onDecrease={() => handleDecrease(menu)}
@@ -330,7 +312,7 @@ export default function Menu() {
               animate={{ y: 0, x: '-50%' }}
               exit={{ y: '100%', x: '-50%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-1/2 z-50 bg-white flex flex-col w-full max-w-[480px]"
+              className="fixed bottom-0 left-1/2 z-50 bg-white flex flex-col w-full max-w-[480px] md:max-w-xl"
               style={{
                 borderRadius: '20px 20px 0 0',
                 maxHeight: expandModal ? '85vh' : '75vh',
@@ -492,13 +474,6 @@ function MenuCard({ menu, index, quantity, isFavorite, onToggleFavorite, onOpenM
             <Star className="w-2.5 h-2.5 fill-current" /> Best
           </span>
         )}
-
-        {/* Favorite */}
-        <button onClick={e => { e.stopPropagation(); onToggleFavorite() }}
-          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center
-                     shadow-sm hover:scale-110 transition-transform">
-          <Heart className={`w-3 h-3 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
-        </button>
       </div>
 
       {/* Content */}

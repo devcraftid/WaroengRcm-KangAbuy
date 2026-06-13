@@ -6,13 +6,14 @@ import {
   ArrowLeft, Printer, DollarSign,
   ShoppingBag, MapPin, Clock, Copy, Check,
   UtensilsCrossed, Search, RefreshCw,
-  AlertCircle, Eye, CreditCard
+  AlertCircle, Eye, CreditCard, ChefHat, Package
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
-import { formatCurrency, formatDateTime, getOrderTypeLabel } from '../../utils/format'
+import { formatCurrency, formatDateTime, getOrderTypeLabel, getStatusColor } from '../../utils/format'
 import { toast } from 'sonner'
-import { playPaymentSuccessSound } from '../../utils/sound'
+import { playPaymentSuccessSound, playOrderNewSound, playOrderProcessingSound, playOrderCompletedSound } from '../../utils/sound'
+import { useRealtimeOrders } from '../../hooks/useRealtime'
 
 export default function CashierPayment() {
   const { id } = useParams()
@@ -41,6 +42,61 @@ export default function CashierPayment() {
       loadOrderDetail(id)
     }
   }, [id])
+
+  useRealtimeOrders((payload) => {
+    if (payload?.eventType === 'INSERT') {
+      playOrderNewSound()
+    }
+    loadAllOrders()
+  })
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+      
+      if (error) throw error
+
+      // Log activity dihapus
+
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('customer_id')
+        .eq('id', orderId)
+        .single()
+
+      if (orderData?.customer_id) {
+        const labels = {
+          processing: 'sedang diproses 👨‍🍳',
+          ready: 'siap diambil! 📦',
+          completed: 'selesai ✅'
+        }
+        await supabase.from('notifications').insert({
+          user_id: orderData.customer_id,
+          title: 'Status Pesanan Diupdate',
+          message: `Pesanan #${orderId.slice(0,8)} ${labels[newStatus] || newStatus}`,
+          type: 'order_updated',
+          link: `/order/${orderId}`
+        })
+      }
+
+      toast.success(`Order #${orderId.slice(0,8)} → ${newStatus}`)
+      if (newStatus === 'processing') playOrderProcessingSound()
+      else if (newStatus === 'ready' || newStatus === 'completed') playOrderCompletedSound()
+      loadAllOrders()
+      if (id === orderId) loadOrderDetail(id)
+    } catch (error) {
+      toast.error('Gagal update status')
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    const icons = { pending: Clock, processing: ChefHat, ready: Package, completed: CheckCircle, cancelled: XCircle }
+    const Icon = icons[status] || Clock
+    return <Icon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+  }
 
   // ============================================
   // LOAD ALL ORDERS - PAKAI SQL MENTAH
@@ -325,13 +381,7 @@ export default function CashierPayment() {
         console.log('✅ Order updated to PROCESSING')
       }
 
-      // Activity log
-      await supabase.from('activities').insert({
-        user_id: profile?.id,
-        description: `Pembayaran #${order.id.slice(0,8)} - ${formatCurrency(order.total_amount)}`,
-        type: 'payment_validated'
-      })
-
+      // Activity log dihapus
       toast.success('Pembayaran SUKSES! ✅')
       // Play suara pembayaran lunas
       playPaymentSuccessSound()
@@ -382,7 +432,7 @@ export default function CashierPayment() {
     setOrder(null)
     setOrderItems([])
     setPayment(null)
-    navigate('/cashier/payment')
+    navigate('/admin/payment')
   }
 
   // ============================================
@@ -500,6 +550,20 @@ export default function CashierPayment() {
                   ? 'Klik tombol di bawah untuk mengkonfirmasi pembayaran tunai.' 
                   : 'Belum ada data pembayaran. Klik tombol di bawah untuk membuat pembayaran.'}
             </p>
+            
+            {payment?.proof_url && (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleViewProof(payment.proof_url)
+                }} 
+                className="w-full mb-3 py-3 bg-blue-100 text-blue-700 rounded-xl font-bold hover:bg-blue-200 border border-blue-200 flex items-center justify-center shadow-sm"
+              >
+                <Eye className="w-5 h-5 mr-2" /> Lihat Bukti Transfer (Dari Pelanggan)
+              </button>
+            )}
+
             <button
               onClick={handleValidatePayment}
               disabled={validating}
@@ -556,9 +620,6 @@ export default function CashierPayment() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link to="/cashier/orders" className="px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-200">
-            ← Orders
-          </Link>
           <button onClick={loadAllOrders} disabled={loadingOrders}
             className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200">
             <RefreshCw className={`w-4 h-4 ${loadingOrders ? 'animate-spin' : ''}`} />
@@ -610,34 +671,54 @@ export default function CashierPayment() {
               </h3>
               <div className="space-y-2">
                 {needPayment.map(o => (
-                  <motion.button
+                  <motion.div
                     key={o.id}
                     initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                    onClick={() => {
-                      navigate(`/cashier/payment/${o.id}`)
-                      loadOrderDetail(o.id)
-                    }}
-                    className="w-full bg-white rounded-xl p-4 shadow-sm border border-yellow-200 hover:border-orange-300 text-left"
+                    className="w-full bg-white rounded-xl p-4 shadow-sm border border-yellow-200 text-left"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                      <div className="flex items-start sm:items-center space-x-3">
+                        <span className={`flex-shrink-0 flex items-center px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${getStatusColor(o.status)}`}>
+                          {getStatusIcon(o.status)}{o.status}
+                        </span>
                         <div>
-                          <p className="font-mono text-sm font-medium">#{o.id.slice(0,8)}</p>
-                          <p className="text-xs text-gray-500">
-                            {o.customer?.full_name || 'Guest'} · {getOrderTypeLabel(o.order_type)}
-                            {o.table_number ? ` · Meja ${o.table_number}` : ''}
+                          <p className="font-mono text-sm sm:text-base font-bold text-gray-900">#{o.id.slice(0,8)}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-0.5">
+                            <span className="font-medium text-gray-700">{o.customer?.full_name || 'Guest'}</span>
+                            <br className="sm:hidden" />
+                            <span className="hidden sm:inline"> • </span>
+                            {getOrderTypeLabel(o.order_type)}
+                            {o.table_number ? ` • Meja ${o.table_number}` : ''}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">{formatCurrency(o.total_amount)}</p>
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">
-                          ⚠️ BAYAR
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
+                        <p className="font-bold text-base sm:text-lg text-gray-900">{formatCurrency(o.total_amount)}</p>
+                        <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold bg-yellow-100 text-yellow-700 mt-1">
+                          ⚠️ BELUM LUNAS
                         </span>
+                        {o.payments?.find(p => p.proof_url)?.proof_url && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleViewProof(o.payments.find(p => p.proof_url).proof_url)
+                            }}
+                            className="mt-1 flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
+                          >
+                            <Eye className="w-3 h-3 mr-1" /> Bukti Diupload
+                          </button>
+                        )}
                       </div>
                     </div>
-                  </motion.button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 border-t border-gray-100 pt-3 mt-1">
+                      <button onClick={() => { navigate(`/admin/payment/${o.id}`); loadOrderDetail(o.id) }} className="flex-1 py-2 sm:py-1.5 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors shadow-sm">💰 Bayar</button>
+                      {o.status === 'pending' && <button onClick={() => updateOrderStatus(o.id, 'processing')} className="flex-1 py-2 sm:py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors border border-orange-100">Masak</button>}
+                      {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'ready')} className="flex-1 py-2 sm:py-1.5 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors shadow-sm">Siap</button>}
+                      {o.status === 'ready' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 sm:py-1.5 bg-green-50 text-green-600 hover:bg-green-100 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors border border-green-100">Selesai</button>}
+                      <button onClick={() => updateOrderStatus(o.id, 'cancelled')} className="flex-1 py-2 sm:py-1.5 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors">Batal</button>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -652,22 +733,34 @@ export default function CashierPayment() {
               <div className="space-y-2 opacity-70">
                 {alreadyPaid.map(o => (
                   <div key={o.id} className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                      <div className="flex items-start sm:items-center space-x-3">
+                        <span className={`flex-shrink-0 flex items-center px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${getStatusColor(o.status)}`}>
+                          {getStatusIcon(o.status)}{o.status}
+                        </span>
                         <div>
-                          <p className="font-mono text-sm font-medium">#{o.id.slice(0,8)}</p>
-                          <p className="text-xs text-gray-500">
-                            {o.customer?.full_name || 'Guest'} · {getOrderTypeLabel(o.order_type)}
+                          <p className="font-mono text-sm sm:text-base font-bold text-gray-900">#{o.id.slice(0,8)}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-0.5">
+                            <span className="font-medium text-gray-700">{o.customer?.full_name || 'Guest'}</span>
+                            <br className="sm:hidden" />
+                            <span className="hidden sm:inline"> • </span>
+                            {getOrderTypeLabel(o.order_type)}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">{formatCurrency(o.total_amount)}</p>
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
+                        <p className="font-bold text-base sm:text-lg text-gray-900">{formatCurrency(o.total_amount)}</p>
+                        <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-700 mt-1">
                           ✅ LUNAS
                         </span>
                       </div>
+                    </div>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 border-t border-gray-100 pt-3 mt-1">
+                      <button onClick={() => { navigate(`/admin/payment/${o.id}`); loadOrderDetail(o.id) }} className="flex-1 py-2 sm:py-1.5 bg-gray-50 text-gray-600 hover:bg-gray-200 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors border border-gray-200">Detail</button>
+                      {o.status === 'pending' && <button onClick={() => updateOrderStatus(o.id, 'processing')} className="flex-1 py-2 sm:py-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors">Masak</button>}
+                      {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'ready')} className="flex-1 py-2 sm:py-1.5 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors shadow-sm">Siap</button>}
+                      {o.status === 'ready' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 sm:py-1.5 bg-green-500 text-white hover:bg-green-600 font-bold rounded-xl sm:rounded-lg text-[10px] sm:text-xs transition-colors shadow-sm">Selesai</button>}
                     </div>
                   </div>
                 ))}

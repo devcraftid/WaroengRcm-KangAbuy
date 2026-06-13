@@ -88,13 +88,7 @@ export default function TakeawayQueue() {
         }
       }
 
-      // Log activity
-      await supabase.from('activities').insert({
-        user_id: profile?.id,
-        description: `Takeaway order #${orderId.slice(0, 8)} diupdate ke ${newStatus}`,
-        type: 'order_updated'
-      })
-
+      // Log activity dihapus
       toast.success(`Order #${orderId.slice(0, 8)} diupdate ke ${newStatus}`)
       loadTakeawayOrders()
     } catch (error) {

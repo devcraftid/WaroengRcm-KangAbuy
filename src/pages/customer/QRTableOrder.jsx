@@ -135,7 +135,7 @@ export default function QRTableOrder() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
       {/* ─── App Content terpusat ─── */}
-      <div className="w-full max-w-[480px] mx-auto bg-white min-h-screen shadow-[0_0_40px_rgba(0,0,0,0.1)] relative isolate flex flex-col">
+      <div className="w-full max-w-[480px] md:max-w-3xl mx-auto bg-white min-h-screen md:border-x shadow-[0_0_40px_rgba(0,0,0,0.1)] relative isolate flex flex-col">
 
       {/* Header */}
       <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white sticky top-0 z-20">
@@ -272,7 +272,7 @@ export default function QRTableOrder() {
 
       {/* Cart Button Mobile */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 p-3 bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-30 w-full max-w-[480px]">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 p-3 bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-30 w-full max-w-[480px] md:max-w-3xl">
           <button
             onClick={() => setShowCart(true)}
             className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-bold flex items-center justify-center"
@@ -287,7 +287,7 @@ export default function QRTableOrder() {
       {/* Cart Slide-up Modal */}
       {showCart && (
         <div className="fixed inset-0 z-40 bg-black/60 flex flex-col items-center" onClick={() => setShowCart(false)}>
-          <div className="w-full max-w-[480px] bg-white mt-auto h-full sm:h-[90vh] sm:rounded-t-3xl flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-[480px] md:max-w-xl bg-white mt-auto h-full sm:h-[90vh] sm:rounded-t-3xl flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
               <button onClick={() => setShowCart(false)} className="flex items-center text-gray-600">

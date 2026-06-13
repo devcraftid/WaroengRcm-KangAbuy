@@ -5,17 +5,12 @@ import {
   LayoutDashboard,
   UtensilsCrossed,
   Tags,
-  Percent,
-  Ticket,
   ShoppingBag,
   Monitor,
   QrCode,
   Users,
-  UserCircle,
   BarChart3,
   DollarSign,
-  Globe,
-  Settings,
   Bell,
   Activity,
   User,
@@ -24,29 +19,30 @@ import {
   LogOut,
   ChevronDown,
   Home,
-  Store
+  Store,
+  ShoppingCart,
+  CreditCard,
+  ClipboardList,
+  History
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import { supabase } from '../../lib/supabase'
 import { playNotificationByType } from '../../utils/sound'
+import { toast } from 'sonner'
 
 const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/admin/pos', icon: ShoppingCart, label: 'POS Kasir' },
   { path: '/admin/menu', icon: UtensilsCrossed, label: 'Kelola Menu' },
   { path: '/admin/categories', icon: Tags, label: 'Kelola Kategori' },
-  { path: '/admin/promo', icon: Percent, label: 'Kelola Promo' },
-  { path: '/admin/voucher', icon: Ticket, label: 'Kelola Voucher' },
-  { path: '/admin/orders', icon: ShoppingBag, label: 'Kelola Order' },
+  { path: '/admin/payment', icon: CreditCard, label: 'Pesanan & Pembayaran' },
+  { path: '/admin/takeaway', icon: ClipboardList, label: 'Takeaway Queue' },
   { path: '/admin/tables', icon: Monitor, label: 'Monitoring Meja' },
   { path: '/admin/qr', icon: QrCode, label: 'QR Meja' },
-  { path: '/admin/cashiers', icon: Users, label: 'Kelola Kasir' },
-  { path: '/admin/customers', icon: UserCircle, label: 'Kelola Pelanggan' },
+  { path: '/admin/history', icon: History, label: 'Riwayat Transaksi' },
+  { path: '/admin/closing', icon: LogOut, label: 'Closing Shift' },
   { path: '/admin/reports', icon: BarChart3, label: 'Laporan & Analytics' },
-  { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
-  { path: '/admin/cms', icon: Globe, label: 'Website CMS' },
-  { path: '/admin/settings', icon: Settings, label: 'Pengaturan Website' },
   { path: '/admin/notifications', icon: Bell, label: 'Notifikasi' },
-  { path: '/admin/activity', icon: Activity, label: 'Activity Log' },
   { path: '/admin/profile', icon: User, label: 'Profile' },
 ]
 
@@ -214,14 +210,19 @@ function AdminNotificationBadge() {
     const channel = supabase
       .channel('admin-notifications-badge')
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
-        table: 'notifications'
+        table: 'notifications',
+        filter: 'user_id=is.null'
       }, (payload) => {
         loadUnreadCount()
-        // Play suara sesuai tipe
-        if (payload?.new?.type) {
+        
+        // Play sound and toast only on new notifications
+        if (payload.eventType === 'INSERT' && payload.new) {
           playNotificationByType(payload.new.type)
+          toast.info(payload.new.title, {
+            description: payload.new.message
+          })
         }
       })
       .subscribe()
@@ -235,6 +236,7 @@ function AdminNotificationBadge() {
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
+        .is('user_id', null)
       setCount(count || 0)
     } catch (_) {}
   }

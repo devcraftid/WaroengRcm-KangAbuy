@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   UtensilsCrossed, Star, MapPin, Phone, Clock, Instagram,
   MessageCircle, ShoppingBag, Sparkles, ChevronRight,
-  Percent, Flame, Package
+  Percent, Flame, Package, Store
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/format'
@@ -44,7 +44,6 @@ export default function Home() {
   const [settings, setSettings]     = useState(null)
   const [bestSellers, setBestSellers] = useState([])
   const [categories, setCategories]  = useState([])
-  const [promotions, setPromotions]  = useState([])
   const [loading, setLoading]        = useState(true)
   const [bannerIndex, setBannerIndex] = useState(0)
 
@@ -65,23 +64,14 @@ export default function Home() {
         { data: settingsData },
         { data: bestSellersData },
         { data: categoriesData },
-        { data: promotionsData },
       ] = await Promise.all([
         supabase.from('website_settings').select('*').single(),
         supabase.from('menus').select('*').eq('is_available', true).order('total_sold', { ascending: false }).limit(6),
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('promotions').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
       ])
       setSettings(settingsData || DEFAULT_INFO)
       setBestSellers(bestSellersData || [])
       setCategories(categoriesData || [])
-      const now = new Date()
-      setPromotions((promotionsData || []).filter(p => {
-        if (!p.is_active) return false
-        if (p.start_date && new Date(p.start_date) > now) return false
-        if (p.end_date && new Date(p.end_date) < now) return false
-        return true
-      }))
     } catch (err) {
       console.error(err)
       setSettings(DEFAULT_INFO)
@@ -109,7 +99,7 @@ export default function Home() {
       {/* ════════════════════════════════ */}
       <section className="relative">
         {/* Banner Slider */}
-        <div className="relative w-full overflow-hidden" style={{ height: 200 }}>
+        <div className="relative w-full overflow-hidden h-[200px] md:h-[400px]">
           {settings?.banner_url ? (
             /* Prioritas: gambar dari Supabase settings */
             <img src={settings.banner_url} alt="Banner" className="w-full h-full object-cover" />
@@ -147,14 +137,14 @@ export default function Home() {
         </div>
 
         {/* Resto info card */}
-        <div className="bg-white mx-3 -mt-6 relative z-10 rounded-2xl border border-gray-100 p-4"
+        <div className="bg-white mx-3 md:mx-auto md:max-w-4xl -mt-6 md:-mt-12 relative z-10 rounded-2xl border border-gray-100 p-4 md:p-6"
              style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
           <div className="flex items-center gap-3">
             {settings?.logo_url ? (
               <img src={settings.logo_url} alt="Logo"
                 className="w-20 h-20 rounded-xl object-contain border border-gray-100 flex-shrink-0 bg-white scale-110 transform origin-left" />
             ) : (
-              <img src="https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/logo/logo1.png" alt="Logo Waroeng RCM"
+              <img src="/logo.png" alt="Logo Waroeng RCM"
                 className="w-20 h-20 rounded-xl object-contain border border-gray-100 flex-shrink-0 bg-white shadow-sm scale-110 transform origin-left" />
             )}
             <div className="flex-1 min-w-0">
@@ -178,7 +168,7 @@ export default function Home() {
       </section>
 
       {/* ─── Order Type pill (ESB style) ─── */}
-      <div className="mx-3 mt-3">
+      <div className="mx-3 md:mx-auto md:max-w-4xl mt-3 md:mt-6">
         <div className="border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="w-4 h-4" style={{ color: PRIMARY }} />
@@ -192,48 +182,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ─── PROMO ─── */}
-      {promotions.length > 0 && (
-        <section className="mt-5">
-          <div className="px-3 flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-gray-900">Promo Spesial</h2>
-            <Link to="/menu" className="text-xs font-medium" style={{ color: PRIMARY }}>
-              Lihat semua →
-            </Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-3 hide-scrollbar pb-1">
-            {promotions.map((promo, i) => (
-              <motion.div
-                key={promo.id}
-                custom={i} variants={fadeUp} initial="hidden" animate="visible"
-                className="flex-shrink-0 w-52 rounded-xl overflow-hidden border border-gray-100 shadow-card"
-              >
-                <div className="relative h-28 bg-gray-100">
-                  {promo.image_url ? (
-                    <img src={promo.image_url} alt={promo.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center"
-                         style={{ background: 'linear-gradient(135deg, #fff5f2, #ffddd0)' }}>
-                      <Percent className="w-10 h-10" style={{ color: PRIMARY, opacity: 0.4 }} />
-                    </div>
-                  )}
-                  <span className="absolute top-2 right-2 text-xs font-bold text-white px-2 py-0.5 rounded-full"
-                    style={{ background: PRIMARY }}>
-                    {promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : `DISKON`}
-                  </span>
-                </div>
-                <div className="p-3 bg-white">
-                  <p className="text-xs font-semibold text-gray-900 line-clamp-1">{promo.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{promo.description || 'Promo spesial!'}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ─── BEST SELLER ─── */}
-      <section className="mt-5">
+      <section className="mt-5 md:mt-8 md:max-w-7xl md:mx-auto">
         <div className="px-3 flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-gray-900">Menu Terfavorit</h2>
           <Link to="/menu" className="text-xs font-medium" style={{ color: PRIMARY }}>
@@ -286,9 +237,9 @@ export default function Home() {
       {categories.length > 0 && (
         <section className="mt-5">
           <div className="px-3 mb-3">
-            <h2 className="text-sm font-bold text-gray-900">Kategori</h2>
+            <h2 className="text-sm md:text-lg font-bold text-gray-900">Kategori</h2>
           </div>
-          <div className="px-3 grid grid-cols-3 gap-2.5">
+          <div className="px-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 md:gap-4">
             {categories.slice(0, 6).map((cat, i) => (
               <motion.div
                 key={cat.id}
@@ -323,7 +274,7 @@ export default function Home() {
       )}
 
       {/* ─── CTA ORDER ─── */}
-      <section className="mt-6 px-3">
+      <section className="mt-6 md:mt-10 px-3 md:max-w-4xl md:mx-auto">
         <Link to="/menu"
           className="flex items-center justify-between w-full px-5 py-4 rounded-2xl text-white"
           style={{ background: `linear-gradient(135deg, ${PRIMARY}, #d44d1f)` }}>
@@ -340,7 +291,7 @@ export default function Home() {
       {/* ─── FOOTER ─── */}
       <footer className="mt-8 bg-gray-900 text-white px-4 py-8">
         <div className="flex items-center gap-3 mb-4">
-          <img src="https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/logo/logo1.png" alt="Logo Waroeng RCM" className="w-20 h-20 object-contain drop-shadow-sm scale-110 transform origin-left" />
+          <img src="/logo.png" alt="Logo Waroeng RCM" className="w-20 h-20 object-contain drop-shadow-sm scale-110 transform origin-left" />
           <div>
             <p className="font-bold text-sm">{settings?.restaurant_name || DEFAULT_INFO.restaurant_name}</p>
             <p className="text-[11px] text-gray-400">Kang Abuy</p>

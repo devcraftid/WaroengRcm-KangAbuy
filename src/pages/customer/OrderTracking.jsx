@@ -155,7 +155,7 @@ export default function OrderTracking() {
         title: 'Bukti Transfer Diupload 💸',
         message: `Order #${order.id.slice(0, 8)} telah mengupload bukti transfer. Segera validasi!`,
         type: 'payment_proof',
-        link: `/cashier/payment/${order.id}`
+        link: `/admin/payment/${order.id}`
       })
 
       toast.success('Bukti transfer berhasil diupload!')

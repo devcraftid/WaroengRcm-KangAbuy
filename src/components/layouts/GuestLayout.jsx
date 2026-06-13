@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, UtensilsCrossed, ShoppingCart, Phone, Menu, X, LogIn, User, ChevronRight, Camera } from 'lucide-react'
+import { Home, UtensilsCrossed, ShoppingCart, Phone, Menu, X, LogIn, User, ChevronRight, Camera, Store } from 'lucide-react'
 import useCartStore from '../../stores/cartStore'
 import useAuthStore from '../../stores/authStore'
 
@@ -33,12 +33,19 @@ export default function GuestLayout() {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5">
-              <img src="https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/logo/logo1.png" alt="Logo Waroeng RCM" className="w-16 h-16 object-contain drop-shadow-sm scale-110 transform origin-left" />
+              <img src="/logo.png" alt="Logo Waroeng RCM" className="w-16 h-16 object-contain drop-shadow-sm scale-110 transform origin-left" />
               <div>
                 <p className="font-bold text-gray-900 text-sm leading-none">WAROENG RCM</p>
                 <p className="text-[10px] leading-none mt-0.5" style={{ color: '#f05a28' }}>Kang Abuy</p>
               </div>
             </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+              <Link to="/" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Beranda</Link>
+              <Link to="/menu" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Menu</Link>
+              <Link to="/contact" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Kontak</Link>
+            </nav>
 
             {/* Right: Cart + Masuk + Menu */}
             <div className="flex items-center gap-1">
@@ -60,26 +67,10 @@ export default function GuestLayout() {
                 </AnimatePresence>
               </Link>
 
-              {/* Masuk / Dashboard */}
-              {!user ? (
-                <Link to="/login"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
-                  style={{ background: '#f05a28' }}>
-                  <LogIn className="w-3.5 h-3.5" />
-                  Masuk
-                </Link>
-              ) : (
-                <Link to="/customer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
-                             bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
-                  <User className="w-3.5 h-3.5" />
-                  Dashboard
-                </Link>
-              )}
-
+              {/* Masuk / Dashboard Removed */}
               {/* Hamburger */}
               <button onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-full hover:bg-gray-50 transition-colors">
+                className="p-2 rounded-full hover:bg-gray-50 transition-colors md:hidden">
                 <Menu className="w-5 h-5 text-gray-700" />
               </button>
             </div>
@@ -110,7 +101,7 @@ export default function GuestLayout() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center gap-2.5">
-                  <img src="https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/logo/logo1.png" alt="Logo" className="w-16 h-16 object-contain drop-shadow-sm scale-110 transform origin-left" />
+                  <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain drop-shadow-sm scale-110 transform origin-left" />
                   <p className="font-bold text-gray-900 text-sm">WAROENG RCM</p>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-50">
@@ -145,29 +136,7 @@ export default function GuestLayout() {
                 </Link>
               </nav>
 
-              {/* Footer */}
-              <div className="px-4 pb-6 border-t border-gray-100 pt-4">
-                {user ? (
-                  <Link to="/customer" onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                         style={{ background: '#f05a28' }}>
-                      {user.email?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-                      <p className="text-xs" style={{ color: '#f05a28' }}>Lihat Dashboard →</p>
-                    </div>
-                  </Link>
-                ) : (
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold text-sm"
-                    style={{ background: '#f05a28' }}>
-                    <LogIn className="w-4 h-4" />
-                    Masuk / Daftar
-                  </Link>
-                )}
-              </div>
+              {/* Footer Removed */}
             </motion.div>
           </>
         )}

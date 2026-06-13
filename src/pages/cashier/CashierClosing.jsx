@@ -149,22 +149,14 @@ export default function CashierClosing() {
           qris_transactions: summary.qrisTransactions,
           total_revenue: summary.totalRevenue,
           discrepancy: diff,
-          notes: closingData.notes,
-          closed_at: new Date().toISOString()
+          notes: closingData.notes
         })
-
       if (error) {
         console.error('Insert error:', error)
         throw error
       }
 
-      // Log activity
-      await supabase.from('activities').insert({
-        user_id: profile?.id,
-        description: `Closing kasir - Revenue: ${formatCurrency(summary.totalRevenue)}`,
-        type: 'cashier_closing'
-      })
-
+      // Log activity dihapus
       toast.success('Closing kasir berhasil!')
       
       // Print
