@@ -59,12 +59,16 @@ function playTone(ctx, frequency, startTime, duration, volume = 0.4, type = 'sin
  */
 export function playOrderNewSound() {
   try {
-    const ctx = getAudioContext()
-    const now = ctx.currentTime
-
-    playTone(ctx, 523.25, now + 0.0, 0.12, 0.35)       // C5
-    playTone(ctx, 659.25, now + 0.13, 0.12, 0.35)      // E5
-    playTone(ctx, 783.99, now + 0.26, 0.18, 0.40)      // G5
+    const audio = new Audio('/sounds/pesanan_masuk.mp3')
+    audio.play().catch(e => {
+      console.warn('[Sound] Autoplay terblokir, fallback ke tone generator:', e)
+      // Fallback jika browser memblokir putar audio otomatis
+      const ctx = getAudioContext()
+      const now = ctx.currentTime
+      playTone(ctx, 523.25, now + 0.0, 0.12, 0.35)
+      playTone(ctx, 659.25, now + 0.13, 0.12, 0.35)
+      playTone(ctx, 783.99, now + 0.26, 0.18, 0.40)
+    })
   } catch (e) {
     console.warn('[Sound] playOrderNewSound error:', e)
   }
