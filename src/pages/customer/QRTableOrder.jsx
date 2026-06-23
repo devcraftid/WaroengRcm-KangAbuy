@@ -26,6 +26,11 @@ export default function QRTableOrder() {
   const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
   const [tableInfo, setTableInfo] = useState(null)
+  
+  const [showGuestModal, setShowGuestModal] = useState(false)
+  const [inputName, setInputName] = useState('')
+  const [inputPhone, setInputPhone] = useState('')
+  const [inputNotes, setInputNotes] = useState('')
 
   useEffect(() => {
     if (tableNumber) {
@@ -379,6 +384,64 @@ export default function QRTableOrder() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Guest Modal */}
+      {showGuestModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 relative">
+            <h2 className="text-lg font-bold mb-4">Informasi Pemesan</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pemesan</label>
+                <input
+                  type="text"
+                  value={inputName}
+                  onChange={(e) => setInputName(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-300 outline-none"
+                  placeholder="Masukkan nama"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                <input
+                  type="tel"
+                  value={inputPhone}
+                  onChange={(e) => setInputPhone(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-300 outline-none"
+                  placeholder="08123456789"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+                <textarea
+                  value={inputNotes}
+                  onChange={(e) => setInputNotes(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-300 outline-none"
+                  placeholder="Misal: pedas, jangan pakai daun bawang"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setShowGuestModal(false)}
+                  className="flex-1 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    setGuestInfo({ name: inputName, phone: inputPhone, notes: inputNotes })
+                    setShowGuestModal(false)
+                  }}
+                  className="flex-1 py-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl text-sm font-bold text-white hover:shadow-lg"
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

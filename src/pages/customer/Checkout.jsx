@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Banknote, QrCode, MapPin, Phone, User,
-  ShoppingBag, CheckCircle, Upload,
+  ShoppingBag, CheckCircle, Upload, X,
   ArrowLeft, Clock, UtensilsCrossed, CreditCard
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -34,10 +34,21 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false)
   const [orderComplete, setOrderComplete] = useState(false)
   const [orderData, setOrderData] = useState(null)
+  const [tables, setTables] = useState([])
 
   useEffect(() => {
     loadQRIS()
+    loadTables()
   }, [])
+
+  const loadTables = async () => {
+    try {
+      const { data } = await supabase.from('tables').select('*').order('table_number')
+      if (data) setTables(data)
+    } catch (e) {
+      console.error('Error loading tables:', e)
+    }
+  }
 
   const loadQRIS = async () => {
     setQrisLoading(true)
@@ -68,22 +79,58 @@ export default function Checkout() {
       toast.error('Keranjang masih kosong')
       return
     }
-    if (orderTypeState === 'dine_in' && !tableNumber.trim()) {
+    if (orderTypeState === 'dine_in' && !tableNumber) {
       toast.error('Nomor meja diperlukan untuk Dine In')
       return
     }
-    if (!customerName.trim()) {
-      toast.error('Nama pemesan wajib diisi')
-      return
+    if (orderTypeState !== 'dine_in') {
+      if (!customerName.trim()) {
+        toast.error('Nama pemesan wajib diisi')
+        return
+      }
+      if (!customerPhone.trim()) {
+        toast.error('Nomor WhatsApp wajib diisi')
+        return
+      }
     }
-    if (!customerPhone.trim()) {
-      toast.error('Nomor WhatsApp wajib diisi')
+    if (paymentMethod === 'qris' && !proofFile) {
+      toast.error('Harap masukkan bukti pembayaran QRIS terlebih dahulu')
       return
     }
 
     setLoading(true)
 
     try {
+      let proofUrl = null
+      if (paymentMethod === 'qris' && proofFile) {
+        if (proofFile.size > 5 * 1024 * 1024) {
+          toast.error('Ukuran file maksimal 5MB')
+          setLoading(false)
+          return
+        }
+
+        const fileExt = proofFile.name.split('.').pop()
+        const fileName = `checkout-${Date.now()}-${Math.random()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('payment_proofs')
+          .upload(fileName, proofFile)
+
+        if (uploadError) {
+          console.warn('Gagal upload ke storage, fallback ke base64', uploadError)
+          const reader = new FileReader()
+          proofUrl = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result)
+            reader.readAsDataURL(proofFile)
+          })
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('payment_proofs')
+            .getPublicUrl(fileName)
+          proofUrl = publicUrl
+        }
+      }
+
       // 1. BUAT ORDER - STATUS PENDING
       // Gabungkan catatan dari cart items
       const itemNotes = items
@@ -97,9 +144,9 @@ export default function Checkout() {
         .from('orders')
         .insert({
           customer_id: user?.id || null,
-          customer_name: customerName.trim() || null,
-          customer_phone: customerPhone.trim() || null,
-          table_number: orderTypeState === 'dine_in' ? tableNumber.trim() : null,
+          customer_name: orderTypeState !== 'dine_in' ? (customerName.trim() || null) : 'Dine In',
+          customer_phone: orderTypeState !== 'dine_in' ? (customerPhone.trim() || null) : null,
+          table_number: orderTypeState === 'dine_in' ? tableNumber : null,
           order_type: orderTypeState,
           status: 'pending', // SELALU PENDING DULU
           total_amount: total,
@@ -134,7 +181,7 @@ export default function Checkout() {
           amount: total,
           method: paymentMethod,
           status: 'pending', // SELALU PENDING
-          proof_url: null
+          proof_url: proofUrl
         })
 
       if (paymentError) {
@@ -145,15 +192,16 @@ export default function Checkout() {
       if (orderTypeState === 'dine_in' && tableNumber) {
         await supabase
           .from('tables')
-          .update({ status: 'occupied' })
+          .update({ status: paymentMethod === 'qris' ? 'waiting_payment' : 'occupied' })
           .eq('table_number', tableNumber.trim())
       }
 
-      // 5. NOTIFIKASI KE KASIR/ADMIN (sertakan nama pemesan)
+      // 5. NOTIFIKASI KE KASIR/ADMIN (sertakan nama pemesan jika ada)
+      const notifyName = orderTypeState === 'dine_in' ? `Meja ${tableNumber}` : customerName.trim()
       await supabase.from('notifications').insert({
         user_id: null, // Untuk semua staff
         title: 'Order Baru! 🔔',
-        message: `${customerName.trim()} - Order #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod.toUpperCase()}${orderTypeState === 'dine_in' ? ` - Meja ${tableNumber}` : ' - Takeaway'}. Perlu pembayaran.`,
+        message: `${notifyName} - Order #${order.id.slice(0, 8)} - ${formatCurrency(total)} - ${paymentMethod.toUpperCase()}${orderTypeState === 'dine_in' ? '' : ' - Takeaway'}. Perlu pembayaran.`,
         type: 'order_created',
         link: `/admin/payment/${order.id}`
       })
@@ -319,13 +367,22 @@ export default function Checkout() {
 
             {orderTypeState === 'dine_in' && (
               <div className="mt-4">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Nomor Meja <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Meja <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input type="text" value={tableNumber}
+                  <select 
+                    value={tableNumber}
                     onChange={(e) => { setTableNumber(e.target.value); setTableId(e.target.value) }}
-                    placeholder="Contoh: Meja 12" required
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all" />
+                    required
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none"
+                  >
+                    <option value="" disabled>Pilih Nomor Meja</option>
+                    {tables.map(t => (
+                      <option key={t.id} value={t.table_number} disabled={t.status === 'occupied'}>
+                        Meja {t.table_number} {t.status === 'occupied' ? '(Terisi)' : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -337,26 +394,32 @@ export default function Checkout() {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                 <User className="w-4 h-4 text-blue-600" />
               </div>
-              <h2 className="text-base font-bold text-gray-900">Informasi Pemesan</h2>
+              <h2 className="text-base font-bold text-gray-900">
+                {orderTypeState === 'dine_in' ? 'Catatan Tambahan' : 'Informasi Pemesan'}
+              </h2>
             </div>
             
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Masukkan nama Anda" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">No. WhatsApp <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="0812-3456-7890" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
-                </div>
-              </div>
+              {orderTypeState !== 'dine_in' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Masukkan nama Anda" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">No. WhatsApp <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="0812-3456-7890" required className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Catatan Pesanan</label>
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows="2"
@@ -392,8 +455,30 @@ export default function Checkout() {
             {paymentMethod === 'qris' && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 pt-4 border-t border-gray-100 space-y-4">
                 <div className="text-center p-4 bg-orange-50 rounded-xl text-sm font-medium text-orange-700 border border-orange-200">
-                  <QrCode className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-                  Setelah klik "Pesan Sekarang", Anda akan diarahkan ke halaman pembayaran berisi kode QRIS/Rekening dan form untuk <b>meng-upload bukti transfer</b>.
+                  <p className="font-bold mb-3 text-orange-800">Scan QRIS Berikut</p>
+                  <div className="bg-white p-2 rounded-xl shadow-sm mx-auto inline-block border-2 border-orange-100 mb-4">
+                    <img src={qrisImage || "https://tbjzsyoygpaioxxhsnmk.supabase.co/storage/v1/object/public/website-assets/qris/1780557685955-o1yjhm.jpg"} alt="QRIS" className="w-48 h-48 object-contain rounded-lg" />
+                  </div>
+                  
+                  <div className="w-full">
+                    {!proofPreview ? (
+                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-orange-300 rounded-xl cursor-pointer bg-white hover:bg-orange-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-6 h-6 text-orange-500 mb-2" />
+                          <p className="text-sm font-semibold text-orange-700">Upload Bukti Transfer <span className="text-red-500">*</span></p>
+                        </div>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleProofChange} />
+                      </label>
+                    ) : (
+                      <div className="relative inline-block mt-2">
+                        <img src={proofPreview} alt="Bukti" className="w-32 h-32 object-cover rounded-xl border border-gray-200 mx-auto shadow-md" />
+                        <button type="button" onClick={() => { setProofFile(null); setProofPreview(null) }} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                        <p className="text-xs mt-3 text-green-700 font-bold bg-green-100 px-3 py-1 rounded-full inline-block">✅ Bukti terlampir</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}

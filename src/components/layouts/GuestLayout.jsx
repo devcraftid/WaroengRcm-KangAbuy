@@ -41,9 +41,10 @@ export default function GuestLayout() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+            <nav className="hidden md:flex flex-1 justify-center items-center gap-6">
               <Link to="/" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Beranda</Link>
               <Link to="/menu" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Menu</Link>
+              <Link to="/gallery" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Galeri</Link>
               <Link to="/contact" className="text-sm font-semibold text-gray-700 hover:text-[#f05a28] transition-colors">Kontak</Link>
             </nav>
 
@@ -67,7 +68,16 @@ export default function GuestLayout() {
                 </AnimatePresence>
               </Link>
 
-              {/* Masuk / Dashboard Removed */}
+              {/* Masuk / Dashboard */}
+              {user ? (
+                <Link to="/admin" className="hidden md:flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-full hover:shadow-lg transition-all" style={{ background: '#f05a28' }}>
+                  <User className="w-4 h-4" /> Dashboard
+                </Link>
+              ) : (
+                <Link to="/login" className="hidden md:flex items-center gap-2 text-sm font-semibold text-[#f05a28] px-4 py-2 rounded-full border border-[#f05a28] hover:bg-[#f05a28] hover:text-white transition-all">
+                  <LogIn className="w-4 h-4" /> Masuk
+                </Link>
+              )}
               {/* Hamburger */}
               <button onClick={() => setMobileMenuOpen(true)}
                 className="p-2 rounded-full hover:bg-gray-50 transition-colors md:hidden">
@@ -136,7 +146,23 @@ export default function GuestLayout() {
                 </Link>
               </nav>
 
-              {/* Footer Removed */}
+              {/* Mobile Login / Dashboard */}
+              <div className="p-4 border-t border-gray-100 mt-auto">
+                {user ? (
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-3 w-full py-3 rounded-xl text-sm font-bold text-white shadow-md transition-all"
+                    style={{ background: '#f05a28' }}>
+                    <User className="w-4 h-4" />
+                    <span>Dashboard Admin</span>
+                  </Link>
+                ) : (
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-3 w-full py-3 rounded-xl text-sm font-bold text-[#f05a28] border border-[#f05a28] hover:bg-[#f05a28] hover:text-white transition-all">
+                    <LogIn className="w-4 h-4" />
+                    <span>Masuk (Admin)</span>
+                  </Link>
+                )}
+              </div>
             </motion.div>
           </>
         )}

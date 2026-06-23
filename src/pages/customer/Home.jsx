@@ -289,66 +289,85 @@ export default function Home() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="mt-8 bg-gray-900 text-white px-4 py-8">
-        <div className="flex items-center gap-3 mb-4">
-          <img src="/logo.png" alt="Logo Waroeng RCM" className="w-20 h-20 object-contain drop-shadow-sm scale-110 transform origin-left" />
+      <footer className="mt-8 bg-gray-900 text-white px-4 py-10 md:py-16">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          
+          {/* Kolom 1: Brand & Tagline */}
           <div>
-            <p className="font-bold text-sm">{settings?.restaurant_name || DEFAULT_INFO.restaurant_name}</p>
-            <p className="text-[11px] text-gray-400">Kang Abuy</p>
+            <div className="flex items-center gap-4 mb-5">
+              <img src="/logo.png" alt="Logo Waroeng RCM" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+              <div>
+                <p className="font-bold text-lg leading-tight">{settings?.restaurant_name || DEFAULT_INFO.restaurant_name}</p>
+                <p className="text-xs text-orange-400 mt-1 font-medium">Kang Abuy</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-400 leading-relaxed pr-4">
+              {settings?.tagline || DEFAULT_INFO.tagline}
+            </p>
+          </div>
+
+          {/* Kolom 2: Informasi */}
+          <div>
+            <h3 className="font-bold text-base mb-5 text-gray-100 uppercase tracking-wider">Informasi</h3>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 text-sm text-gray-400 leading-relaxed">
+                <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: PRIMARY }} />
+                <span>{settings?.address || DEFAULT_INFO.address}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <Clock className="w-5 h-5 flex-shrink-0" style={{ color: PRIMARY }} />
+                <span>{settings?.operating_hours || DEFAULT_INFO.operating_hours}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kolom 3: Kontak & Link */}
+          <div>
+            <h3 className="font-bold text-base mb-5 text-gray-100 uppercase tracking-wider">Hubungi Kami</h3>
+            <div className="space-y-4">
+              <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group">
+                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                  <Phone className="w-4 h-4 text-gray-300 group-hover:text-white" />
+                </div>
+                <span>{settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number}</span>
+              </a>
+              
+              {(settings?.instagram_url || DEFAULT_INFO.instagram_url) && (
+                <a href={settings?.instagram_url || DEFAULT_INFO.instagram_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group">
+                  <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                    <Instagram className="w-4 h-4 text-gray-300 group-hover:text-white" />
+                  </div>
+                  <span>Instagram Kami</span>
+                </a>
+              )}
+
+              <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group">
+                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                  <MessageCircle className="w-4 h-4 text-gray-300 group-hover:text-white" />
+                </div>
+                <span>Chat WhatsApp</span>
+              </a>
+
+              <a href={settings?.gofood_url || DEFAULT_INFO.gofood_url}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group">
+                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-red-500 transition-colors">
+                  <ShoppingBag className="w-4 h-4 text-gray-300 group-hover:text-white" />
+                </div>
+                <span>Pesan via GoFood</span>
+              </a>
+            </div>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-          {settings?.tagline || DEFAULT_INFO.tagline}
-        </p>
-        <div className="space-y-2.5">
-          {/* Alamat */}
-          <div className="flex items-start gap-2 text-xs text-gray-400">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-px" style={{ color: PRIMARY }} />
-            <span>{settings?.address || DEFAULT_INFO.address}</span>
-          </div>
 
-          {/* Telepon / WhatsApp */}
-          <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-            <Phone className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-            <span>{settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number}</span>
-          </a>
-
-          {/* Jam Buka */}
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-            <span>{settings?.operating_hours || DEFAULT_INFO.operating_hours}</span>
-          </div>
-
-          {/* Instagram */}
-          {(settings?.instagram_url || DEFAULT_INFO.instagram_url) && (
-            <a href={settings?.instagram_url || DEFAULT_INFO.instagram_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-              <Instagram className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-              <span>Instagram</span>
-            </a>
-          )}
-
-          {/* WhatsApp Chat */}
-          <a href={`https://wa.me/${(settings?.whatsapp_number || DEFAULT_INFO.whatsapp_number).replace(/^0/, '62').replace(/^\+/, '').replace(/[^\d]/g, '')}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-            <MessageCircle className="w-3.5 h-3.5 text-green-400" />
-            <span>Chat WhatsApp</span>
-          </a>
-
-          {/* GoFood */}
-          <a href={settings?.gofood_url || DEFAULT_INFO.gofood_url}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white">
-            <ShoppingBag className="w-3.5 h-3.5" style={{ color: '#e8173e' }} />
-            <span>Pesan via GoFood</span>
-          </a>
-        </div>
-        <div className="border-t border-gray-800 mt-6 pt-4">
-          <p className="text-[11px] text-gray-600 text-center">
-            © {new Date().getFullYear()} {settings?.restaurant_name || DEFAULT_INFO.restaurant_name}
+        <div className="max-w-7xl mx-auto border-t border-gray-800 mt-10 pt-6">
+          <p className="text-sm text-gray-500 text-center">
+            © {new Date().getFullYear()} {settings?.restaurant_name || DEFAULT_INFO.restaurant_name}. All rights reserved.
           </p>
         </div>
       </footer>

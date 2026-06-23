@@ -225,12 +225,22 @@ export default function OrderTracking() {
   // ============================================
   // ORDER STEPS
   // ============================================
-  const steps = [
-    { status: 'pending', icon: Clock, label: 'Menunggu', desc: 'Pesanan diterima' },
-    { status: 'processing', icon: ChefHat, label: 'Diproses', desc: 'Sedang dimasak' },
-    { status: 'ready', icon: Package, label: 'Siap', desc: 'Siap diambil' },
-    { status: 'completed', icon: CheckCircle, label: 'Selesai', desc: 'Pesanan selesai' }
-  ]
+  const getSteps = () => {
+    const isDineIn = order?.order_type === 'dine_in'
+    return [
+      { status: 'pending', icon: Clock, label: 'Menunggu', desc: 'Pesanan diterima' },
+      { status: 'processing', icon: ChefHat, label: 'Diproses', desc: 'Sedang dimasak' },
+      { 
+        status: 'ready', 
+        icon: Package, 
+        label: 'Siap', 
+        desc: isDineIn ? 'Siap diantar ke meja' : 'Siap diambil / diantar' 
+      },
+      { status: 'completed', icon: CheckCircle, label: 'Selesai', desc: 'Pesanan selesai' }
+    ]
+  }
+
+  const steps = getSteps()
 
   const getCurrentStep = () => {
     if (!order) return 0
@@ -436,7 +446,7 @@ export default function OrderTracking() {
                       >
                         {order.status === 'pending' && '⏳ Menunggu konfirmasi'}
                         {order.status === 'processing' && '👨‍🍳 Sedang dimasak'}
-                        {order.status === 'ready' && '📦 Siap diambil!'}
+                        {order.status === 'ready' && (order.order_type === 'dine_in' ? '🍽️ Segera diantar ke meja!' : '📦 Siap diambil / diantar!')}
                         {order.status === 'completed' && '✅ Selesai'}
                       </motion.p>
                     )}
