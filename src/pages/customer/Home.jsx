@@ -66,7 +66,7 @@ export default function Home() {
         { data: categoriesData },
       ] = await Promise.all([
         supabase.from('website_settings').select('*').single(),
-        supabase.from('menus').select('*').eq('is_available', true).order('total_sold', { ascending: false }).limit(6),
+        supabase.from('menus').select('*').eq('is_available', true).eq('is_best_seller', true).limit(6),
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
       ])
       setSettings(settingsData || DEFAULT_INFO)
@@ -97,9 +97,9 @@ export default function Home() {
       {/* ════════════════════════════════ */}
       {/* HERO — gambar restoran (ESB style) */}
       {/* ════════════════════════════════ */}
-      <section className="relative">
+      <section className="relative pt-3 px-3 md:pt-6 md:px-6">
         {/* Banner Slider */}
-        <div className="relative w-full overflow-hidden h-[200px] md:h-[400px]">
+        <div className="relative w-full overflow-hidden h-[180px] md:h-[400px] rounded-3xl shadow-md border border-gray-100">
           {settings?.banner_url ? (
             /* Prioritas: gambar dari Supabase settings */
             <img src={settings.banner_url} alt="Banner" className="w-full h-full object-cover" />
@@ -137,8 +137,8 @@ export default function Home() {
         </div>
 
         {/* Resto info card */}
-        <div className="bg-white mx-3 md:mx-auto md:max-w-4xl -mt-6 md:-mt-12 relative z-10 rounded-2xl border border-gray-100 p-4 md:p-6"
-             style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+        <div className="bg-white mx-4 md:mx-auto md:max-w-4xl -mt-8 md:-mt-16 relative z-10 rounded-3xl border border-gray-100 p-4 md:p-6"
+             style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center gap-3">
             {settings?.logo_url ? (
               <img src={settings.logo_url} alt="Logo"
@@ -207,11 +207,13 @@ export default function Home() {
                       <UtensilsCrossed className="w-8 h-8 text-gray-300" />
                     </div>
                   )}
-                  <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 text-[10px] font-bold
-                                   text-white px-1.5 py-0.5 rounded-full"
-                    style={{ background: '#f59e0b' }}>
-                    <Star className="w-2.5 h-2.5 fill-current" /> Best
-                  </span>
+                  {menu.is_best_seller && (
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 text-[10px] font-bold
+                                     text-white px-1.5 py-0.5 rounded-full"
+                      style={{ background: '#f59e0b' }}>
+                      <Star className="w-2.5 h-2.5 fill-current" /> Best
+                    </span>
+                  )}
                 </div>
                 <div className="p-2.5">
                   <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">{menu.name}</p>

@@ -5,17 +5,19 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../stores/authStore'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, formatDateTime } from '../../utils/format'
 import { toast } from 'sonner'
 
 export default function POS() {
   const { profile } = useAuthStore()
   const [menus, setMenus] = useState([])
   const [categories, setCategories] = useState([])
+  const [tables, setTables] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [tableNumber, setTableNumber] = useState('')
+  const [notes, setNotes] = useState('')
   const [orderType, setOrderType] = useState('dine_in')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [showPayment, setShowPayment] = useState(false)
@@ -29,12 +31,14 @@ export default function POS() {
       let query = supabase.from('menus').select('*, categories(*)').eq('is_available', true)
       if (selectedCategory !== 'all') query = query.eq('category_id', selectedCategory)
 
-      const [menuResult, catResult] = await Promise.all([
+      const [menuResult, catResult, tableResult] = await Promise.all([
         query.order('name'),
-        supabase.from('categories').select('*').order('name')
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('tables').select('*').order('table_number')
       ])
       setMenus(menuResult.data || [])
       setCategories(catResult.data || [])
+      setTables(tableResult.data || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -56,6 +60,29 @@ export default function POS() {
   const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id))
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
+  const printReceipt = (orderData, cartItems) => {
+    const w = window.open('', '_blank', 'width=350,height=600')
+    if (!w || !orderData) return
+    
+    const items = cartItems.map(i => 
+      `<tr><td>${i.name||'Menu'}</td><td align="center">${i.quantity}x</td><td align="right">${formatCurrency(i.price * i.quantity)}</td></tr>`
+    ).join('')
+
+    w.document.write(`<html><head><title>Struk</title>
+      <style>*{margin:0;padding:0}body{font-family:monospace;padding:15px;max-width:300px;margin:auto;font-size:11px}
+      .c{text-align:center}.d{border-top:1px dashed #000;margin:8px 0}.t{font-size:15px}
+      table{width:100%}td{padding:2px 0}@media print{body{margin:0;padding:10px}}</style></head>
+      <body><div class="c"><h3>🍜 WAROENG RCM</h3></div><div class="d"></div>
+      <p><b>Order:</b> #${orderData.id.slice(0,8)}</p><p><b>Tgl:</b> ${formatDateTime(orderData.created_at || new Date().toISOString())}</p>
+      <p><b>Kasir:</b> ${profile?.full_name||'-'}</p>
+      ${orderData.notes ? `<p><b>Catatan:</b> ${orderData.notes}</p>` : ''}
+      <div class="d"></div><table>${items}</table><div class="d"></div>
+      <p class="t r">Total: ${formatCurrency(orderData.total_amount)}</p>
+      <p><b>Status:</b> ✅ LUNAS</p><div class="d"></div><div class="c"><p>Terima kasih!</p></div></body></html>`)
+    w.document.close()
+    setTimeout(() => w.print(), 500)
+  }
+
   const handleCheckout = async () => {
     if (cart.length === 0) { toast.error('Keranjang kosong'); return }
     if (orderType === 'dine_in' && !tableNumber) { toast.error('Masukkan nomor meja'); return }
@@ -68,9 +95,9 @@ export default function POS() {
           table_number: tableNumber || null,
           order_type: orderType,
           total_amount: total,
-          status: 'pending',
+          status: 'processing',
           cashier_id: profile?.id,
-          notes: ''
+          notes: notes
         })
         .select()
         .single()
@@ -92,13 +119,28 @@ export default function POS() {
         order_id: order.id,
         amount: total,
         method: paymentMethod,
-        status: paymentMethod === 'cash' ? 'completed' : 'pending'
+        status: 'completed',
+        validated_by: profile?.id,
+        validated_at: new Date().toISOString()
       })
 
       // Activity log dihapus karena tabel tidak digunakan lagi
       toast.success('Order berhasil!')
+
+      if (orderType === 'dine_in' && tableNumber) {
+        await supabase.from('tables').update({
+          status: 'cleaning'
+        }).eq('table_number', tableNumber)
+        
+        loadMenus() // Refresh data tables
+      }
+      
+      // Karena semua dari POS otomatis lunas, cetak struk langsung
+      printReceipt(order, cart)
+
       setCart([])
       setTableNumber('')
+      setNotes('')
       setShowPayment(false)
       setShowCartMobile(false)
     } catch (error) {
@@ -159,9 +201,19 @@ export default function POS() {
           </div>
           {orderType === 'dine_in' && (
             <div className="mt-3">
-              <input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="Masukkan Nomor Meja" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#f05a28]/20 focus:border-[#f05a28] outline-none transition-all bg-white" />
+              <select value={tableNumber} onChange={e => setTableNumber(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#f05a28]/20 focus:border-[#f05a28] outline-none transition-all bg-white">
+                <option value="" disabled>Pilih Meja</option>
+                {tables.map(t => (
+                  <option key={t.id} value={t.table_number} disabled={t.status !== 'available'}>
+                    Meja {t.table_number} {t.status !== 'available' ? '(Terpakai)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
+          <div className="mt-3">
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Catatan (opsional)" rows="2" className="w-full px-4 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#f05a28]/20 focus:border-[#f05a28] outline-none transition-all bg-white resize-none"></textarea>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           {cart.map(item => (
@@ -219,8 +271,20 @@ export default function POS() {
               ))}
             </div>
             {orderType === 'dine_in' && (
-              <div className="px-3 pb-3"><input type="text" value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="Nomor Meja" className="w-full px-3 py-2 rounded-lg border text-sm" /></div>
+              <div className="px-3 pb-3">
+                <select value={tableNumber} onChange={e => setTableNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg border text-sm">
+                  <option value="" disabled>Pilih Meja</option>
+                  {tables.map(t => (
+                    <option key={t.id} value={t.table_number} disabled={t.status !== 'available'}>
+                      Meja {t.table_number} {t.status !== 'available' ? '(Terpakai)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
+            <div className="px-3 pb-3">
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Catatan (opsional)" rows="2" className="w-full px-3 py-2 rounded-lg border text-sm resize-none"></textarea>
+            </div>
             <div className="flex-1 overflow-y-auto px-3">
               {cart.map(item => (
                 <div key={item.id} className="flex items-center py-2 border-b">

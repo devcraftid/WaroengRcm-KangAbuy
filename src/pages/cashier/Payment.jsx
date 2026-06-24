@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Banknote, QrCode, CheckCircle, XCircle,
   ArrowLeft, Printer, DollarSign,
@@ -89,6 +89,43 @@ export default function CashierPayment() {
       if (id === orderId) loadOrderDetail(id)
     } catch (error) {
       toast.error('Gagal update status')
+    }
+  }
+
+  const quickValidatePayment = async (o, e) => {
+    e.stopPropagation()
+    const pay = o.payments?.[0]
+    setValidating(true)
+    try {
+      if (pay) {
+        await supabase.from('payments').update({
+          status: 'completed',
+          validated_by: profile?.id,
+          validated_at: new Date().toISOString()
+        }).eq('id', pay.id)
+      } else {
+        await supabase.from('payments').insert({
+          order_id: o.id,
+          amount: o.total_amount,
+          method: 'cash',
+          status: 'completed',
+          validated_by: profile?.id,
+          validated_at: new Date().toISOString()
+        })
+      }
+
+      await supabase.from('orders').update({
+        status: 'processing',
+        updated_at: new Date().toISOString()
+      }).eq('id', o.id)
+
+      toast.success(`Pembayaran Order #${o.id.slice(0,8)} Lunas! ✅`)
+      playPaymentSuccessSound()
+      loadAllOrders(true)
+    } catch (error) {
+      toast.error('Gagal validasi cepat')
+    } finally {
+      setValidating(false)
     }
   }
 
@@ -769,13 +806,18 @@ export default function CashierPayment() {
 
                     {/* Actions */}
                     <div className="mt-auto space-y-2">
-                      <button onClick={() => { navigate(`/admin/payment/${o.id}`); loadOrderDetail(o.id) }} className="w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-950 hover:from-yellow-500 hover:to-yellow-600 font-black rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center">
-                        💳 PROSES PEMBAYARAN
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={(e) => quickValidatePayment(o, e)} disabled={validating} className="flex-1 py-3 bg-green-500 text-white hover:bg-green-600 font-black rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center">
+                          ✅ LUNAS CEPAT
+                        </button>
+                        <button onClick={() => { navigate(`/admin/payment/${o.id}`); loadOrderDetail(o.id) }} className="flex-1 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-950 hover:from-yellow-500 hover:to-yellow-600 font-black rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center">
+                          👁️ DETAIL
+                        </button>
+                      </div>
                       
                       <div className="flex flex-wrap gap-2">
                         {o.status === 'pending' && <button onClick={() => updateOrderStatus(o.id, 'processing')} className="flex-1 py-2 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-orange-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors border border-gray-200 min-w-[70px]">👨‍🍳 Masak</button>}
-                        {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'ready')} className="flex-1 py-2 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[70px]">📦 Siap Diambil</button>}
+                        {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 bg-green-500 text-white hover:bg-green-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[70px]">✅ Selesai</button>}
                         {o.status === 'ready' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 bg-green-500 text-white hover:bg-green-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[70px]">✅ Selesai</button>}
                         <button onClick={() => updateOrderStatus(o.id, 'cancelled')} className="px-3 sm:px-4 py-2 bg-white text-red-500 hover:bg-red-50 font-bold rounded-xl text-[10px] sm:text-xs transition-colors border border-red-100">Batal</button>
                       </div>
@@ -847,7 +889,7 @@ export default function CashierPayment() {
                       
                       <div className="flex flex-wrap gap-2">
                         {o.status === 'pending' && <button onClick={() => updateOrderStatus(o.id, 'processing')} className="flex-1 py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold rounded-xl text-[10px] sm:text-xs transition-colors border border-orange-200 min-w-[80px]">👨‍🍳 Masak Dulu</button>}
-                        {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'ready')} className="flex-1 py-2 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[80px]">📦 Siap Diambil</button>}
+                        {o.status === 'processing' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 bg-green-500 text-white hover:bg-green-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[80px]">✅ Selesaikan</button>}
                         {o.status === 'ready' && <button onClick={() => updateOrderStatus(o.id, 'completed')} className="flex-1 py-2 bg-green-500 text-white hover:bg-green-600 font-bold rounded-xl text-[10px] sm:text-xs transition-colors shadow-sm min-w-[80px]">✅ Selesaikan</button>}
                       </div>
                     </div>
@@ -860,19 +902,70 @@ export default function CashierPayment() {
       )}
 
       {/* Modal Bukti */}
-      {showProofModal && proofImage && (
-        <div className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-4" onClick={() => setShowProofModal(false)}>
-          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
-            <button type="button" onClick={() => setShowProofModal(false)} className="absolute -top-10 right-0 text-white font-bold hover:text-gray-300">✕ Tutup</button>
-            <div className="bg-white rounded-2xl p-4 shadow-2xl">
-              <h3 className="text-lg font-bold mb-3 text-center">📎 Bukti Pembayaran</h3>
-              <div className="bg-gray-50 rounded-xl p-2">
-                <img src={proofImage} alt="Bukti" className="w-full max-h-[70vh] object-contain rounded-lg" />
+      <AnimatePresence>
+        {showProofModal && proofImage && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6" 
+            onClick={() => setShowProofModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="relative max-w-2xl w-full" 
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                type="button" 
+                onClick={() => setShowProofModal(false)} 
+                className="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-md"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+              
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-50 to-transparent pointer-events-none"></div>
+                
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 shadow-sm border border-blue-50">
+                    <CheckCircle className="w-8 h-8 text-blue-600" />
+                  </div>
+                  
+                  <h3 className="text-2xl font-black text-gray-900 mb-1 text-center">Bukti Transfer</h3>
+                  <p className="text-sm text-gray-500 font-medium mb-6 text-center">Tinjau bukti pembayaran yang diunggah pelanggan</p>
+                  
+                  <div className="w-full bg-gray-50 rounded-2xl p-2 sm:p-3 border border-gray-100 shadow-inner group">
+                    <div className="relative rounded-xl overflow-hidden bg-white">
+                      <img 
+                        src={proofImage} 
+                        alt="Bukti Pembayaran" 
+                        className="w-full max-h-[60vh] object-contain transition-transform duration-500 group-hover:scale-[1.02] cursor-zoom-in" 
+                        onClick={() => window.open(proofImage, '_blank')}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 bg-white/90 text-gray-900 px-4 py-2 rounded-xl font-bold text-sm shadow-lg flex items-center backdrop-blur-sm transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
+                          <Eye className="w-4 h-4 mr-2" /> Klik untuk perbesar
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setShowProofModal(false)}
+                    className="w-full mt-6 py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-1"
+                  >
+                    Tutup & Kembali
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
