@@ -1,76 +1,104 @@
-# 🍜 WAROENG RCM KANG ABUY
+<div align="center">
+  <img src="public/logo.png" width="150" alt="Logo Waroeng RCM" />
+  <h1>Waroeng RCM - Menu Digital & POS Berbasis QR Code</h1>
 
-**Modern Enterprise Restaurant Management System**
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Supabase-181818?style=for-the-badge&logo=supabase&logoColor=3ECF8E" alt="Supabase" />
+</div>
 
-> "Makanan Enak, Harga Ekonomis, Solusi Ketika Laper & Mageer"
+<br />
 
-![Waroeng RCM](https://img.shields.io/badge/version-1.0.0-orange)
-![React](https://img.shields.io/badge/React-18-blue)
-![Vite](https://img.shields.io/badge/Vite-5-purple)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-3-06B6D4)
-![Supabase](https://img.shields.io/badge/Supabase-Latest-green)
+**Repositori ini merupakan bagian dari pemenuhan Tugas Kerja Praktek (KP).**
 
-## 📋 Overview
+> **Judul Kerja Praktek:**
+> *"Perancangan Website Menu Digital Berbasis QR Code untuk Sistem Pemesanan pada UMKM Kedai Warung Kang Abuy"*
 
-Waroeng RCM Kang Abuy adalah sistem manajemen restoran enterprise modern yang setara dengan ESB Order, Moka POS, Majoo, dan platform restoran premium lainnya. Dibangun dengan teknologi terdepan untuk memberikan pengalaman terbaik bagi owner, kasir, dan pelanggan.
+## Tim Pengembang (Mahasiswa KP)
+Proyek ini dirancang dan dikembangkan oleh:
+| Nama | NIM |
+| :--- | :--- |
+| **Fadel** | 231011402972 |
+| **Yuma** | 231011400656 |
+| **Tias** | 231011400593 |
 
-## ✨ Features
+---
 
-### 🏪 Admin (Owner) Dashboard
-- Real-time revenue monitoring
-- Menu & category management
-- Promotion & voucher management
-- Order management
-- Table monitoring with QR system
-- Cashier & customer management
-- Advanced analytics & reports
-- Website CMS (no-code editing)
-- QRIS payment management
+## Tentang Proyek
+Sistem Informasi **Waroeng RCM** adalah sebuah aplikasi web yang mengintegrasikan Menu Digital Mandiri (Self-Service) melalui _Scan QR Code_ dengan Sistem Kasir Digital (Point of Sales). Aplikasi ini secara khusus dibangun untuk mendigitalisasi proses bisnis di UMKM Kedai Warung Kang Abuy.
 
-### 💰 Cashier Dashboard
-- Point of Sale (POS) system
-- Order creation & management
-- Cash & QRIS payment processing
-- Table monitoring & management
-- Takeaway queue management
-- Transaction history
-- Daily closing
-- Receipt printing
+Dengan sistem ini, pelanggan tidak perlu lagi antre atau memanggil pelayan untuk memesan. Cukup dengan melakukan _scan QR Code_ yang ada di meja masing-masing menggunakan kamera smartphone, pelanggan dapat langsung melihat menu, memesan, hingga melacak status pesanannya. Seluruh pesanan akan langsung masuk ke layar Kasir/Admin secara Real-Time.
 
-### 👥 Customer Interface
-- Browse menu with categories
-- Cart management
-- QR table ordering
-- Guest checkout
-- Order tracking (real-time)
-- Order history
-- Favorite items
-- Membership system
-- Voucher management
-- WhatsApp OTP login
-- Google login
+## Fitur Unggulan
 
-## 🚀 Tech Stack
+### Sisi Pelanggan (Customer)
+- **Scan QR Code & Menu Digital:** Pemesanan instan langsung dari meja tanpa instalasi aplikasi.
+- **Keranjang Cerdas:** Perhitungan subtotal otomatis untuk makan di tempat (Dine-in) atau bawa pulang (Takeaway).
+- **Pembayaran Fleksibel:** Mendukung metode pembayaran Tunai maupun Cashless (QRIS) dengan fitur upload bukti transfer.
+- **Live Order Tracking:** Pelacakan pesanan secara langsung (Menunggu Validasi -> Sedang Dimasak -> Selesai).
 
-- **Frontend**: React 18 + Vite + JSX
-- **Styling**: TailwindCSS + Framer Motion
-- **State Management**: Zustand + TanStack Query
-- **Backend**: Supabase (PostgreSQL)
-- **Real-time**: Supabase Realtime
-- **Auth**: Supabase Auth
-- **Storage**: Supabase Storage
-- **Deployment**: Vercel
+### Sisi Admin / Kasir (Back-Office)
+- **Notifikasi Real-Time (WebSockets):** Pesanan baru dari meja pelanggan akan langsung muncul disertai bunyi notifikasi secara otomatis tanpa refresh halaman.
+- **Validasi Pembayaran Interaktif:** Pengecekan bukti transfer dengan fitur pop-up detail gambar yang aman dari pemblokiran browser.
+- **Manajemen Menu & Kategori:** Mengatur ketersediaan hidangan, harga, dan gambar dengan mudah.
+- **Dashboard Analytics:** Visualisasi grafik pendapatan (Trend Penjualan), metrik performa pelayanan rata-rata, hingga daftar hidangan Paling Laris (Best Seller).
+- **Cetak Struk Thermal:** Struk pesanan yang diformat khusus untuk dicetak langsung menggunakan printer kasir (Thermal Printer).
 
-## 📦 Installation
+---
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Supabase account
+## Teknologi yang Digunakan (Tech Stack)
+- **Frontend:** React.js, Vite
+- **Styling:** Tailwind CSS, Framer Motion (Animasi UI)
+- **Icons:** Lucide React
+- **Backend & Database:** Supabase (PostgreSQL, Realtime Subscriptions, Storage)
+- **State Management:** Zustand
+- **Routing:** React Router DOM
 
-### Setup
+---
 
-1. Clone repository
+## Panduan Instalasi (Cara Menjalankan Lokal)
+
+Untuk menjalankan proyek ini di komputer lokal Anda, ikuti langkah-langkah berikut:
+
+### 1. Clone Repositori
 ```bash
-git clone https://github.com/yourusername/waroeng-rcm-kang-abuy.git
-cd waroeng-rcm-kang-abuy
+git clone https://github.com/devcraftid/WaroengRcm-KangAbuy.git
+cd WaroengRcm-KangAbuy
+```
+
+### 2. Install Dependensi
+Pastikan [Node.js](https://nodejs.org/) sudah terinstal di komputer Anda, lalu jalankan:
+```bash
+npm install
+```
+
+### 3. Konfigurasi Environment Variables
+Buat file bernama `.env` di root folder proyek, lalu isi dengan konfigurasi Supabase Anda:
+```env
+VITE_SUPABASE_URL=URL_SUPABASE_ANDA
+VITE_SUPABASE_ANON_KEY=KUNCI_ANON_SUPABASE_ANDA
+```
+*(Catatan: Mintalah kredensial ini kepada tim pengembang jika Anda bertindak sebagai peninjau/dosen).*
+
+### 4. Jalankan Aplikasi (Development Server)
+```bash
+npm run dev
+```
+Aplikasi dapat diakses melalui browser pada `http://localhost:3000` (atau port lain yang tertera di terminal).
+
+---
+
+## Dokumentasi / Screenshot Tampilan
+*(Bagian ini dapat diisi nanti dengan screenshot aplikasi)*
+- **Tampilan Menu Pelanggan:** `(Masukkan gambar di sini)`
+- **Tampilan Lacak Pesanan:** `(Masukkan gambar di sini)`
+- **Tampilan Notifikasi Kasir Real-time:** `(Masukkan gambar di sini)`
+- **Tampilan Dashboard Analitik (Admin):** `(Masukkan gambar di sini)`
+
+---
+
+<p align="center">
+  Dibuat oleh Mahasiswa KP Universitas Pamulang<br>
+  © 2026 Waroeng RCM
+</p>
