@@ -90,11 +90,27 @@ Aplikasi dapat diakses melalui browser pada `http://localhost:3000` (atau port l
 ---
 
 ## Dokumentasi / Screenshot Tampilan
-*(Bagian ini dapat diisi nanti dengan screenshot aplikasi)*
-- **Tampilan Menu Pelanggan:** `(Masukkan gambar di sini)`
-- **Tampilan Lacak Pesanan:** `(Masukkan gambar di sini)`
-- **Tampilan Notifikasi Kasir Real-time:** `(Masukkan gambar di sini)`
-- **Tampilan Dashboard Analitik (Admin):** `(Masukkan gambar di sini)`
+
+### Tampilan Menu Pelanggan
+<a href="public/img/Screenshot/publik/Screenshot%20(96).png" target="_blank">
+  <img src="public/img/Screenshot/publik/Screenshot (96).png" width="600" alt="Menu Pelanggan" />
+</a>
+
+### Tampilan Lacak Pesanan
+<a href="public/img/Screenshot/publik/Screenshot%20(97).png" target="_blank">
+  <img src="public/img/Screenshot/publik/Screenshot (97).png" width="600" alt="Lacak Pesanan" />
+</a>
+
+### Tampilan Notifikasi Kasir Real-time
+<a href="public/img/Screenshot/admin/Screenshot%20(102).png" target="_blank">
+  <img src="public/img/Screenshot/admin/Screenshot (102).png" width="600" alt="Kasir Real-time" />
+</a>
+
+### Tampilan Dashboard Analitik (Admin)
+<a href="public/img/Screenshot/admin/Screenshot%20(103).png" target="_blank">
+  <img src="public/img/Screenshot/admin/Screenshot (103).png" width="600" alt="Dashboard Analitik" />
+</a>
+
 
 ---
 
