@@ -101,14 +101,14 @@ Aplikasi dapat diakses melalui browser pada `http://localhost:3000` (atau port l
   <img src="public/img/Screenshot/publik/Screenshot (97).png" width="600" alt="Lacak Pesanan" />
 </a>
 
-### Tampilan Notifikasi Kasir Real-time
+### Tampilan Login
 <a href="public/img/Screenshot/admin/Screenshot%20(102).png" target="_blank">
-  <img src="public/img/Screenshot/admin/Screenshot (102).png" width="600" alt="Kasir Real-time" />
+  <img src="public/img/Screenshot/admin/Screenshot (102).png" width="600" alt="Login" />
 </a>
 
-### Tampilan Dashboard Analitik (Admin)
+### Tampilan Admin
 <a href="public/img/Screenshot/admin/Screenshot%20(103).png" target="_blank">
-  <img src="public/img/Screenshot/admin/Screenshot (103).png" width="600" alt="Dashboard Analitik" />
+  <img src="public/img/Screenshot/admin/Screenshot (103).png" width="600" alt="Tampilan Admin" />
 </a>
 
 
